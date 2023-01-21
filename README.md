@@ -1,3 +1,4 @@
+![Release](https://jitpack.io/v/dev.pk7r/spigot-starter-ioc.svg)
 
 # Spigot Starter IoC
 Spigot Starter IoC is a lightweight framework designed to be used in Spigot plugins. 
