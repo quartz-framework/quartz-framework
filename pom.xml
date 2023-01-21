@@ -7,7 +7,7 @@
     <groupId>dev.pk7r</groupId>
     <artifactId>spigot-starter-ioc</artifactId>
     <name>spigot-starter-ioc</name>
-    <version>1.0</version>
+    <version>0.0.1</version>
     <packaging>jar</packaging>
 
     <developers>
