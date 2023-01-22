@@ -2,7 +2,7 @@ package dev.pk7r.spigot.starter.ioc.injector;
 
 import dev.pk7r.spigot.starter.ioc.annotation.Inject;
 import dev.pk7r.spigot.starter.ioc.exception.BeanNotFoundException;
-import dev.pk7r.spigot.starter.ioc.factory.BeanFactory;
+import dev.pk7r.spigot.starter.ioc.factory.bean.BeanFactory;
 import dev.pk7r.spigot.starter.ioc.util.BeanUtil;
 import dev.pk7r.spigot.starter.ioc.util.ReflectionUtil;
 import lombok.AllArgsConstructor;

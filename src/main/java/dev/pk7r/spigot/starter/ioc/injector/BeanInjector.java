@@ -1,6 +1,6 @@
 package dev.pk7r.spigot.starter.ioc.injector;
 
-import dev.pk7r.spigot.starter.ioc.factory.BeanFactory;
+import dev.pk7r.spigot.starter.ioc.factory.bean.BeanFactory;
 
 public interface BeanInjector {
 

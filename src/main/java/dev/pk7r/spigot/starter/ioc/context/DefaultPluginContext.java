@@ -2,8 +2,10 @@ package dev.pk7r.spigot.starter.ioc.context;
 
 import dev.pk7r.spigot.starter.ioc.annotation.PluginMain;
 import dev.pk7r.spigot.starter.ioc.exception.ContextInitializationException;
-import dev.pk7r.spigot.starter.ioc.factory.BeanFactory;
-import dev.pk7r.spigot.starter.ioc.factory.DefaultBeanFactory;
+import dev.pk7r.spigot.starter.ioc.factory.bean.BeanFactory;
+import dev.pk7r.spigot.starter.ioc.factory.bean.DefaultBeanFactory;
+import dev.pk7r.spigot.starter.ioc.factory.event.DefaultEventFactory;
+import dev.pk7r.spigot.starter.ioc.factory.event.EventFactory;
 import dev.pk7r.spigot.starter.ioc.injector.BeanInjector;
 import dev.pk7r.spigot.starter.ioc.injector.DefaultBeanInjector;
 import dev.pk7r.spigot.starter.ioc.lifecycle.DefaultLifecycleMethodsInspector;
@@ -17,6 +19,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.val;
+import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 
 import java.util.Collection;
@@ -33,6 +36,8 @@ public class DefaultPluginContext implements PluginContext {
 
     private BeanFactory beanFactory;
 
+    private EventFactory eventFactory;
+
     private BeanInjector beanInjector;
 
     private BeanDefinitionRegistry beanDefinitionRegistry;
@@ -48,6 +53,7 @@ public class DefaultPluginContext implements PluginContext {
             setPlugin(plugin);
             setPluginMain(pluginMain);
             setPluginName(plugin.getName());
+            setEventFactory(new DefaultEventFactory(getPlugin()));
             setBeanDefinitionRegistry(new DefaultBeanDefinitionRegistry(this));
             setBeanFactory(new DefaultBeanFactory(getBeanDefinitionRegistry()));
             setBeanInjector(new DefaultBeanInjector(getBeanFactory()));
@@ -77,20 +83,11 @@ public class DefaultPluginContext implements PluginContext {
                     } else return true;
                 })
                 .peek(injectable -> getLifecycleMethodsInspector().registerLifecycleMethods(injectable))
-                .peek(injectable -> {
-                    if (BeanUtil.isPrimary(injectable)) {
-                        getBeanDefinitionRegistry().registerBeanDefinition(injectable);
-                    }
-                })
-                .forEach(injectable -> {
-                    if (!BeanUtil.isPrimary(injectable)) {
-                        getBeanDefinitionRegistry().registerBeanDefinition(injectable);
-                    }
-                });
+                .forEach(injectable -> getBeanDefinitionRegistry().registerBeanDefinition(injectable));
         getBeanDefinitionRegistry()
                 .getBeanDefinitions()
                 .forEach(beanDefinition -> getBeanInjector().inject(beanDefinition.getLiteralType()));
-        // TODO: Register all events here
+        getBeanFactory().getBeansOfType(Listener.class).forEach(listener -> getEventFactory().registerEvents(listener));
         getLifecycleMethodsInspector().getPostConstructMethods().forEach(getLifecycleMethodsInspector()::invokeLifecycleMethod);
     }
 

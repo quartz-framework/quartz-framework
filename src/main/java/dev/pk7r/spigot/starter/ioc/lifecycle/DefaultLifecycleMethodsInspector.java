@@ -1,7 +1,7 @@
 package dev.pk7r.spigot.starter.ioc.lifecycle;
 
 import dev.pk7r.spigot.starter.ioc.exception.LifecycleException;
-import dev.pk7r.spigot.starter.ioc.factory.BeanFactory;
+import dev.pk7r.spigot.starter.ioc.factory.bean.BeanFactory;
 import dev.pk7r.spigot.starter.ioc.util.ReflectionUtil;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -17,10 +17,6 @@ public class BeanUtil {
         return annotatedElement.isAnnotationPresent(Bean.class);
     }
 
-    public boolean isPrimary(AnnotatedElement annotatedElement) {
-        return annotatedElement.isAnnotationPresent(Primary.class);
-    }
-
     public boolean isSingleton(AnnotatedElement annotatedElement) {
         val isScopePresent = annotatedElement.isAnnotationPresent(Scope.class);
         return !isScopePresent || annotatedElement.getAnnotation(Scope.class).value() == BeanScope.SINGLETON;

@@ -11,7 +11,6 @@ import dev.pk7r.spigot.starter.ioc.util.BeanUtil;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.SneakyThrows;
-import lombok.extern.java.Log;
 import lombok.val;
 
 import java.util.HashSet;

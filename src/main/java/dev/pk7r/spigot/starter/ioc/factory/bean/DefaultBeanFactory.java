@@ -1,4 +1,4 @@
-package dev.pk7r.spigot.starter.ioc.factory;
+package dev.pk7r.spigot.starter.ioc.factory.bean;
 
 import dev.pk7r.spigot.starter.ioc.model.BeanDefinition;
 import dev.pk7r.spigot.starter.ioc.model.BeanScope;
