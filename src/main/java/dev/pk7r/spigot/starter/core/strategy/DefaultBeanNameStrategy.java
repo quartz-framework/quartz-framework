@@ -21,6 +21,6 @@ public class DefaultBeanNameStrategy implements BeanNameStrategy {
 
     @Override
     public String generateBeanName(Method method) {
-        return "%s#%s".formatted(method.getName(), generateBeanName(method.getDeclaringClass()));
+        return String.format("%s#%s", method.getDeclaringClass().getSimpleName(), method.getName());
     }
 }
