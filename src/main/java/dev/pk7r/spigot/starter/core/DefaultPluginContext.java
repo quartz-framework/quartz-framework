@@ -1,5 +1,6 @@
 package dev.pk7r.spigot.starter.core;
 
+import dev.pk7r.spigot.starter.core.annotation.AutoConfiguration;
 import dev.pk7r.spigot.starter.core.annotation.PluginApplication;
 import dev.pk7r.spigot.starter.core.context.PluginContext;
 import dev.pk7r.spigot.starter.core.exception.ContextInitializationException;
@@ -18,9 +19,12 @@ import lombok.val;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 @Slf4j
 @Getter
@@ -58,9 +62,9 @@ public class DefaultPluginContext implements PluginContext {
             if (!application.getClass().isAnnotationPresent(PluginApplication.class)) {
                 throw new ContextInitializationException("Main class must be annotated with @PluginMain");
             }
-            val pluginMain = application.getClass().getAnnotation(PluginApplication.class);
+            val pluginApplicationAnnotation = application.getClass().getAnnotation(PluginApplication.class);
             setPlugin(application);
-            setPluginApplication(pluginMain);
+            setPluginApplication(pluginApplicationAnnotation);
             setPluginName(application.getName());
             setEventFactory(new DefaultEventFactory(getPlugin()));
             setBeanDefinitionRegistry(new DefaultBeanDefinitionRegistry(this));
@@ -77,13 +81,25 @@ public class DefaultPluginContext implements PluginContext {
 
     @Override
     public void startContext() {
+        val scanner = DefaultClassScanner.getInstance();
+        val pluginApplication = getPluginApplication();
+        val autoConfigs = pluginApplication.enableAutoConfiguration() ?
+                scanner.scan(
+                        getPluginApplication().basePackages(),
+                        getPluginApplication().exclude(),
+                        clazz -> clazz.isAnnotationPresent(AutoConfiguration.class),
+                        getPluginApplication().verbose()
+                ) : Collections.<Class<?>>emptyList();
         val injectables = DefaultClassScanner.getInstance().scan(
                 getPluginApplication().basePackages(),
                 getPluginApplication().exclude(),
                 (BeanUtil::isInjectable),
                 getPluginApplication().verbose());
+        injectables.addAll(autoConfigs);
+        Predicate<Class<?>> isIncluded = candidate -> !Arrays.asList(pluginApplication.excludeClasses()).contains(candidate);
         injectables
                 .stream()
+                .filter(isIncluded)
                 .filter(clazz -> !clazz.isAnnotation())
                 .filter(injectable -> {
                     if (BeanUtil.isConditionalOnClass(injectable)) {

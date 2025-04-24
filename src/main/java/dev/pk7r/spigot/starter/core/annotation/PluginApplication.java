@@ -9,8 +9,12 @@ public @interface PluginApplication {
 
     String[] basePackages();
 
+    Class<?>[] excludeClasses() default {};
+
     String[] exclude() default "";
 
     boolean verbose() default false;
+
+    boolean enableAutoConfiguration() default true;
 
 }

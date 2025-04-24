@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>dev.pk7r</groupId>
     <artifactId>spigot-starter-core</artifactId>
-    <version>0.1.1-SNAPSHOT</version>
+    <version>0.1.2-SNAPSHOT</version>
     <name>spigot-starter-core</name>
     <description>Spigot Starter Core is a Spigot Plugin framework for creating lightweight, dependency-injection-based plugins for the Spigot Minecraft server.</description>
     <url>https://pk7r.dev</url>
