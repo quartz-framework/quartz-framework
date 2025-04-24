@@ -3,17 +3,17 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
     <groupId>dev.pk7r</groupId>
-    <artifactId>spigot-starter</artifactId>
+    <artifactId>spigot-starter-core</artifactId>
     <version>0.1.0-SNAPSHOT</version>
-    <name>spigot-starter</name>
-    <description>Spigot Starter is a Spigot Plugin framework for creating lightweight, dependency-injection-based plugins for the Spigot Minecraft server.</description>
+    <name>spigot-starter-core</name>
+    <description>Spigot Starter Core is a Spigot Plugin framework for creating lightweight, dependency-injection-based plugins for the Spigot Minecraft server.</description>
     <url>https://pk7r.dev</url>
     <inceptionYear>2023</inceptionYear>
 
     <licenses>
         <license>
             <name>MIT</name>
-            <url>https://github.com/pk7r/spigot-starter/blob/main/LICENSE</url>
+            <url>https://github.com/pk7r/spigot-starter-core/blob/main/LICENSE</url>
         </license>
     </licenses>
 
@@ -26,9 +26,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git://github.com/pk7r/spigot-starter.git</connection>
-        <developerConnection>scm:git://github.com/pk7r/spigot-starter.git</developerConnection>
-        <url>git://github.com/pk7r/spigot-starter.git</url>
+        <connection>scm:git://github.com/pk7r/spigot-starter-core.git</connection>
+        <developerConnection>scm:git://github.com/pk7r/spigot-starter-core.git</developerConnection>
+        <url>git://github.com/pk7r/spigot-starter-core.git</url>
     </scm>
 
     <properties>
