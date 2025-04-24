@@ -3,17 +3,17 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
     <groupId>dev.pk7r</groupId>
-    <artifactId>spigot-starter-ioc</artifactId>
-    <version>0.0.1</version>
-    <name>spigot-starter-ioc</name>
-    <description>spigot-starter-ioc is a Java framework for creating lightweight, dependency-injection-based plugins for the Spigot Minecraft server.</description>
+    <artifactId>spigot-starter</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <name>spigot-starter</name>
+    <description>Spigot Starter is a Spigot Plugin framework for creating lightweight, dependency-injection-based plugins for the Spigot Minecraft server.</description>
     <url>https://pk7r.dev</url>
     <inceptionYear>2023</inceptionYear>
 
     <licenses>
         <license>
             <name>MIT</name>
-            <url>https://github.com/pk7r/spigot-starter-ioc/blob/main/LICENSE</url>
+            <url>https://github.com/pk7r/spigot-starter/blob/main/LICENSE</url>
         </license>
     </licenses>
 
@@ -26,9 +26,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git://github.com/pk7r/spigot-starter-ioc.git</connection>
-        <developerConnection>scm:git://github.com/pk7r/spigot-starter-ioc.git</developerConnection>
-        <url>git://github.com/pk7r/spigot-starter-ioc.git</url>
+        <connection>scm:git://github.com/pk7r/spigot-starter.git</connection>
+        <developerConnection>scm:git://github.com/pk7r/spigot-starter.git</developerConnection>
+        <url>git://github.com/pk7r/spigot-starter.git</url>
     </scm>
 
     <properties>
@@ -42,13 +42,28 @@
             <id>spigot</id>
             <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
         </repository>
+        <repository>
+            <id>minebench-repo</id>
+            <url>https://repo.minebench.de/</url>
+        </repository>
     </repositories>
 
     <dependencies>
         <dependency>
+            <groupId>de.themoep</groupId>
+            <artifactId>minedown</artifactId>
+            <version>1.7.1-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.24</version>
+            <version>1.18.36</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.16</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -111,6 +126,12 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <relocations>
+                        <relocation>
+                            <pattern>de.themoep.minedown</pattern>
+                            <shadedPattern>dev.pk7r.spigot.starter.ioc.minedown</shadedPattern>
+                        </relocation>
+                    </relocations>
                     <createDependencyReducedPom>false</createDependencyReducedPom>
                     <filters>
                         <filter>
