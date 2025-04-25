@@ -1,4 +1,4 @@
-[![Release](https://jitpack.io/v/dev.pk7r/spigot-starter-ioc.svg)](https://jitpack.io/#dev.pk7r/spigot-starter-core)
+[![Release](https://jitpack.io/v/dev.pk7r/spigot-starter-core.svg)](https://jitpack.io/#dev.pk7r/spigot-starter-core)
 
 # Spigot Starter Core
 Spigot Starter Core is a lightweight framework designed to be used in Spigot plugins. 
