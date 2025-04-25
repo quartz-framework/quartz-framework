@@ -1,8 +1,9 @@
 package dev.pk7r.spigot.starter.core.util;
 
 import dev.pk7r.spigot.starter.core.annotation.*;
+import dev.pk7r.spigot.starter.core.property.PropertyPostProcessor;
 import dev.pk7r.spigot.starter.core.exception.BeanNotFoundException;
-import dev.pk7r.spigot.starter.core.factory.bean.BeanFactory;
+import dev.pk7r.spigot.starter.core.factory.BeanFactory;
 import dev.pk7r.spigot.starter.core.model.BeanScope;
 import lombok.SneakyThrows;
 import lombok.experimental.UtilityClass;
@@ -79,18 +80,25 @@ public class BeanUtil {
         for (int i = 0; i < parameters.length; i++) {
             val parameter = parameters[i];
             val type = parameter.getType();
-            if (BeanUtil.hasNamedInstance(parameter)) {
-                val namedInstance = BeanUtil.getNamedInstance(parameter);
-                if (!beanFactory.containsBean(namedInstance, type)) {
-                    throw new BeanNotFoundException(String.format("No beans %s found for %s",
-                            namedInstance,
-                            type.getSimpleName()));
-                }
-                val instance = beanFactory.getBean(namedInstance, type);
-                constructorParameterInstances[i] = instance;
+            val value = parameter.getAnnotation(Value.class);
+            if (value != null) {
+                val environmentPostProcessor = beanFactory.getBean(PropertyPostProcessor.class);
+                val targetValue = environmentPostProcessor.process(value.value(), value.source(), type);
+                constructorParameterInstances[i] = targetValue;
             } else {
-                val instance = beanFactory.getBean(type);
-                constructorParameterInstances[i] = instance;
+                if (BeanUtil.hasNamedInstance(parameter)) {
+                    val namedInstance = BeanUtil.getNamedInstance(parameter);
+                    if (!beanFactory.containsBean(namedInstance, type)) {
+                        throw new BeanNotFoundException(String.format("No beans %s found for %s",
+                                namedInstance,
+                                type.getSimpleName()));
+                    }
+                    val obj = beanFactory.getBean(namedInstance, type);
+                    constructorParameterInstances[i] = obj;
+                } else {
+                    val obj = beanFactory.getBean(type);
+                    constructorParameterInstances[i] = obj;
+                }
             }
         }
         return (T) selectedConstructor.newInstance(constructorParameterInstances);
@@ -100,26 +108,30 @@ public class BeanUtil {
     @SuppressWarnings("unchecked")
     public <T> T newInstance(BeanFactory beanFactory, Method method) {
         method.setAccessible(true);
-        if (!BeanUtil.isBean(method)) {
-            throw new BeanNotFoundException("Invalid bean definition");
-        }
         val parameters = method.getParameters();
         val parameterInstances = new Object[parameters.length];
         for (int i = 0; i < parameters.length; i++) {
             val parameter = parameters[i];
             val type = parameter.getType();
-            if (BeanUtil.hasNamedInstance(parameter)) {
-                val namedInstance = BeanUtil.getNamedInstance(parameter);
-                if (!beanFactory.containsBean(namedInstance, type)) {
-                    throw new BeanNotFoundException(String.format("No beans %s found for %s",
-                            namedInstance,
-                            type.getSimpleName()));
-                }
-                val obj = beanFactory.getBean(namedInstance, type);
-                parameterInstances[i] = obj;
+            val value = parameter.getAnnotation(Value.class);
+            if (value != null) {
+                val environmentPostProcessor = beanFactory.getBean(PropertyPostProcessor.class);
+                val targetValue = environmentPostProcessor.process(value.value(), value.source(), type);
+                parameterInstances[i] = targetValue;
             } else {
-                val obj = beanFactory.getBean(type);
-                parameterInstances[i] = obj;
+                if (BeanUtil.hasNamedInstance(parameter)) {
+                    val namedInstance = BeanUtil.getNamedInstance(parameter);
+                    if (!beanFactory.containsBean(namedInstance, type)) {
+                        throw new BeanNotFoundException(String.format("No beans %s found for %s",
+                                namedInstance,
+                                type.getSimpleName()));
+                    }
+                    val obj = beanFactory.getBean(namedInstance, type);
+                    parameterInstances[i] = obj;
+                } else {
+                    val obj = beanFactory.getBean(type);
+                    parameterInstances[i] = obj;
+                }
             }
         }
         val bean = beanFactory.getBean(method.getDeclaringClass());

@@ -1,4 +1,4 @@
-package dev.pk7r.spigot.starter.core.factory.bean;
+package dev.pk7r.spigot.starter.core.factory;
 
 public interface BeanFactory extends ListableBeanFactory {
 

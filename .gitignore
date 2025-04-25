@@ -11,7 +11,7 @@
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
 .idea/**/shelf
-spigot-starter-ioc.iml
+spigot-starter-core.iml
 # AWS User-specific
 .idea/**/aws.xml
 

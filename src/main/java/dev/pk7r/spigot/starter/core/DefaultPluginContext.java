@@ -1,11 +1,17 @@
 package dev.pk7r.spigot.starter.core;
 
+import co.aikar.commands.BaseCommand;
+import co.aikar.commands.PaperCommandManager;
 import dev.pk7r.spigot.starter.core.annotation.AutoConfiguration;
 import dev.pk7r.spigot.starter.core.annotation.PluginApplication;
 import dev.pk7r.spigot.starter.core.context.PluginContext;
+import dev.pk7r.spigot.starter.core.convert.*;
+import dev.pk7r.spigot.starter.core.property.PropertyPostProcessor;
 import dev.pk7r.spigot.starter.core.exception.ContextInitializationException;
-import dev.pk7r.spigot.starter.core.factory.bean.BeanFactory;
-import dev.pk7r.spigot.starter.core.factory.event.EventFactory;
+import dev.pk7r.spigot.starter.core.factory.BeanFactory;
+import dev.pk7r.spigot.starter.core.factory.CommandFactory;
+import dev.pk7r.spigot.starter.core.factory.EventFactory;
+import dev.pk7r.spigot.starter.core.factory.PropertySourceFactory;
 import dev.pk7r.spigot.starter.core.injector.BeanInjector;
 import dev.pk7r.spigot.starter.core.lifecycle.LifecycleMethodsInspector;
 import dev.pk7r.spigot.starter.core.registry.BeanDefinitionRegistry;
@@ -16,8 +22,12 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.bukkit.Server;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginLoader;
+import org.bukkit.plugin.PluginManager;
+import org.bukkit.scheduler.BukkitScheduler;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -29,7 +39,7 @@ import java.util.function.Predicate;
 @Slf4j
 @Getter
 @Setter(AccessLevel.PRIVATE)
-public class DefaultPluginContext implements PluginContext {
+public abstract class DefaultPluginContext implements PluginContext {
 
     private final UUID id = UUID.randomUUID();
 
@@ -46,6 +56,14 @@ public class DefaultPluginContext implements PluginContext {
     private BeanFactory beanFactory;
 
     private EventFactory eventFactory;
+
+    private CommandFactory commandFactory;
+
+    private PaperCommandManager commandManager;
+
+    private PropertyPostProcessor propertyPostProcessor;
+
+    private PropertySourceFactory propertySourceFactory;
 
     private BeanInjector beanInjector;
 
@@ -66,11 +84,15 @@ public class DefaultPluginContext implements PluginContext {
             setPlugin(application);
             setPluginApplication(pluginApplicationAnnotation);
             setPluginName(application.getName());
-            setEventFactory(new DefaultEventFactory(getPlugin()));
             setBeanDefinitionRegistry(new DefaultBeanDefinitionRegistry(this));
             setBeanFactory(new DefaultBeanFactory(getBeanDefinitionRegistry()));
             setBeanInjector(new DefaultBeanInjector(getBeanFactory()));
             setLifecycleMethodsInspector(new DefaultLifecycleMethodsInspector(getBeanFactory()));
+            setEventFactory(new DefaultEventFactory(getPlugin()));
+            setCommandManager(new PaperCommandManager(getPlugin()));
+            setCommandFactory(new DefaultCommandFactory(getPlugin(), getCommandManager()));
+            setPropertySourceFactory(new DefaultPropertySourceFactory(getPlugin()));
+            setPropertyPostProcessor(new DefaultPropertyPostProcessor(getPropertySourceFactory(), getBeanFactory()));
             registerDefaultBeans();
             startContext();
             this.startupTime = System.currentTimeMillis();
@@ -108,11 +130,26 @@ public class DefaultPluginContext implements PluginContext {
                     } else return true;
                 })
                 .forEach(injectable -> getBeanDefinitionRegistry().registerBeanDefinition(injectable));
+        val verbose = pluginApplication.verbose();
         getBeanDefinitionRegistry()
                 .getBeanDefinitions()
                 .stream()
                 .peek(beanDefinition -> getLifecycleMethodsInspector().registerLifecycleMethods(beanDefinition.getLiteralType()))
                 .peek(beanDefinition -> getBeanInjector().inject(beanDefinition.getLiteralType()))
+                .peek(beanDefinition -> {
+                    val instance = beanDefinition.getInstance();
+                    if (instance instanceof BaseCommand) {
+                        val command = (BaseCommand) instance;
+                        getCommandFactory().registerCommand(command);
+                    }
+                })
+                .peek(beanDefinition -> {
+                    val instance = beanDefinition.getInstance();
+                    if (instance instanceof Listener) {
+                        val listener = (Listener) instance;
+                        getEventFactory().registerEvents(listener);
+                    }
+                })
                 .forEach(beanDefinition -> {
                     val postConstructMethods = getLifecycleMethodsInspector().getPostConstructMethods();
                     postConstructMethods
@@ -121,7 +158,9 @@ public class DefaultPluginContext implements PluginContext {
                             .findFirst()
                             .ifPresent(postConstructMethod -> getLifecycleMethodsInspector().invokeLifecycleMethod(postConstructMethod));
                 });
-        getBeanFactory().getBeansOfType(Listener.class).forEach(listener -> getEventFactory().registerEvents(listener));
+        val listeners = getBeanFactory().getBeansOfType(Listener.class);
+        if (verbose) log.info("Registered {} listeners", listeners.size());
+        if (verbose) log.info("Registered {} commands", getCommandFactory().getCommandManager().getRegisteredRootCommands().size());
     }
 
     @Override
@@ -151,13 +190,39 @@ public class DefaultPluginContext implements PluginContext {
         return getBeanFactory().getBeansOfType(requiredType);
     }
 
-    private void registerDefaultBeans() {
+    protected void registerDefaultBeans() {
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(getPropertySourceFactory());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(getPropertyPostProcessor());
         getBeanDefinitionRegistry().registerSingletonBeanDefinition(getPluginName() + "Plugin", Plugin.class, getPlugin());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(getPluginName() + "PluginManager", PluginManager.class, getPlugin().getServer().getPluginManager());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(getPluginName() + "PluginLoader", PluginLoader.class, getPlugin().getPluginLoader());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(getPluginName() + "Server", Server.class, getPlugin().getServer());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(getPluginName() + "Scheduler", BukkitScheduler.class, getPlugin().getServer().getScheduler());
         getBeanDefinitionRegistry().registerSingletonBeanDefinition(getPluginName() + "Context", PluginContext.class, this);
         getBeanDefinitionRegistry().registerSingletonBeanDefinition(getPluginName() + "BeanFactory", BeanFactory.class, getBeanFactory());
         getBeanDefinitionRegistry().registerSingletonBeanDefinition(getPluginName() + "BeanDefinitionRegistry", BeanDefinitionRegistry.class, getBeanDefinitionRegistry());
         getBeanDefinitionRegistry().registerSingletonBeanDefinition(getPluginName() + "BeanInjector", BeanInjector.class, getBeanInjector());
         getBeanDefinitionRegistry().registerSingletonBeanDefinition(getPluginName() + "LifecycleMethodsInspector", LifecycleMethodsInspector.class, getLifecycleMethodsInspector());
         getBeanDefinitionRegistry().registerSingletonBeanDefinition(getPluginName() + "EventFactory", EventFactory.class, getEventFactory());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(getPluginName() + "CommandFactory", CommandFactory.class, getCommandFactory());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(getPluginName() + "CommandManager", PaperCommandManager.class, getCommandManager());
+        registerConverters();
+    }
+
+    protected void registerConverters() {
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(new BigDecimalConvertService());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(new BigIntegerConvertService());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(new BooleanConvertService());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(new DoubleConvertService());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(new DurationConvertService());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(new FloatConvertService());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(new InstantConvertService());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(new IntegerConvertService());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(new LocalDateConvertService());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(new LocalDateTimeConvertService());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(new LocalTimeConvertService());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(new StringListConvertService());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(new StringConvertService());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(new LongConvertService());
     }
 }

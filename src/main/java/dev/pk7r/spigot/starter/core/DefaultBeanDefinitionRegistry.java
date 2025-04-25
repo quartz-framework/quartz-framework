@@ -19,6 +19,7 @@ import org.pacesys.reflect.Reflect;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -34,7 +35,7 @@ class DefaultBeanDefinitionRegistry implements BeanDefinitionRegistry {
     public BeanDefinition getBeanDefinition(Class<?> requiredType) {
         return getBeanDefinitions()
                 .stream()
-                .filter(beanDefinition -> beanDefinition.getLiteralType().equals(requiredType) || beanDefinition.getType().equals(requiredType))
+                .filter(filterBeanDefinition(requiredType))
                 .min((a, b) -> Boolean.compare(!a.isPrimary(), !b.isPrimary()))
                 .orElseThrow(() -> new BeanNotFoundException("No beans found for " + requiredType.getSimpleName()));
     }
@@ -43,7 +44,7 @@ class DefaultBeanDefinitionRegistry implements BeanDefinitionRegistry {
     public BeanDefinition getBeanDefinition(String beanName, Class<?> requiredType) {
         return getBeanDefinitions()
                 .stream()
-                .filter(beanDefinition -> beanDefinition.getLiteralType().equals(requiredType) || beanDefinition.getType().equals(requiredType))
+                .filter(filterBeanDefinition(requiredType))
                 .filter(beanDefinition -> beanDefinition.getName().equals(beanName))
                 .min((a, b) -> Boolean.compare(!a.isPrimary(), !b.isPrimary()))
                 .orElseThrow(() -> new BeanNotFoundException("No beans found for " + requiredType.getSimpleName()));
@@ -52,13 +53,7 @@ class DefaultBeanDefinitionRegistry implements BeanDefinitionRegistry {
     @Override
     public boolean containsBeanDefinition(String beanName, Class<?> requiredType) {
         return beanDefinitions.stream()
-                .filter(beanDefinition -> {
-                    if (beanDefinition.isInternalBean()) {
-                        return beanDefinition.getLiteralType().equals(requiredType) || beanDefinition.getType().equals(requiredType);
-                    } else {
-                        return beanDefinition.getType().equals(requiredType);
-                    }
-                })
+                .filter(filterBeanDefinition(requiredType))
                 .anyMatch(beanDefinition -> beanDefinition.getName().equals(beanName));
     }
 
@@ -91,6 +86,7 @@ class DefaultBeanDefinitionRegistry implements BeanDefinitionRegistry {
         val isSingleton = BeanUtil.isSingleton(clazz);
         val isLazy = BeanUtil.isLazy(clazz);
         val beanFactory = pluginContext.getBeanFactory();
+        val environmentPostProcessor = pluginContext.getPropertyPostProcessor();
         Object instance = isLazy ? null : BeanUtil.newInstance(beanFactory, clazz);
         createBeanDefinition(beanName, primary, true, hasNamedInstance, isSingleton ? BeanScope.SINGLETON : BeanScope.PROTOTYPE,
                 requiredType, clazz, instance);
@@ -115,6 +111,17 @@ class DefaultBeanDefinitionRegistry implements BeanDefinitionRegistry {
     }
 
     @Override
+    public void registerSingletonBeanDefinition(Object instance) {
+        val aClass = instance.getClass();
+        registerSingletonBeanDefinition(aClass, instance);
+    }
+
+    @Override
+    public void registerSingletonBeanDefinition(Class<?> clazz, Object instance) {
+        registerSingletonBeanDefinition(DefaultBeanNameStrategy.getInstance().generateBeanName(clazz), clazz, instance);
+    }
+
+    @Override
     public void registerSingletonBeanDefinition(String beanName, Class<?> clazz, Object instance) {
         if (containsBeanDefinition(beanName, clazz)) {
             throw new BeanCreationException("A bean with name %s of type %s has already been registered");
@@ -124,8 +131,9 @@ class DefaultBeanDefinitionRegistry implements BeanDefinitionRegistry {
 
     @Override
     public Set<BeanDefinition> getBeanDefinitionsByType(Class<?> requiredType) {
-        return getBeanDefinitions().stream()
-                .filter(beanDefinition -> beanDefinition.getType().equals(requiredType) || beanDefinition.getLiteralType().equals(requiredType))
+        return getBeanDefinitions()
+                .stream()
+                .filter(filterBeanDefinition(requiredType))
                 .collect(Collectors.toSet());
     }
 
@@ -153,5 +161,11 @@ class DefaultBeanDefinitionRegistry implements BeanDefinitionRegistry {
         beanDefinitions.removeIf(b -> b.getId().equals(beanDefinition.getId()));
         beanDefinitions.add(beanDefinition);
         return instance;
+    }
+
+    private Predicate<BeanDefinition> filterBeanDefinition(Class<?> requiredType) {
+        return beanDefinition -> requiredType.isAssignableFrom(beanDefinition.getType()) ||
+                requiredType.isAssignableFrom(beanDefinition.getLiteralType()) ||
+                (beanDefinition.getInstance() != null && requiredType.isAssignableFrom(beanDefinition.getInstance().getClass()));
     }
 }

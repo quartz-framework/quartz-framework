@@ -1,7 +1,7 @@
 package dev.pk7r.spigot.starter.core;
 
 import dev.pk7r.spigot.starter.core.exception.LifecycleException;
-import dev.pk7r.spigot.starter.core.factory.bean.BeanFactory;
+import dev.pk7r.spigot.starter.core.factory.BeanFactory;
 import dev.pk7r.spigot.starter.core.lifecycle.LifecycleMethodsInspector;
 import dev.pk7r.spigot.starter.core.util.BeanUtil;
 import dev.pk7r.spigot.starter.core.util.ReflectionUtil;

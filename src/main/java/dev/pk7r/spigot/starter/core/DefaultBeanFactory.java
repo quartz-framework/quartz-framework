@@ -2,8 +2,8 @@ package dev.pk7r.spigot.starter.core;
 
 import dev.pk7r.spigot.starter.core.annotation.NamedInstance;
 import dev.pk7r.spigot.starter.core.exception.BeanCreationException;
-import dev.pk7r.spigot.starter.core.factory.bean.BeanFactory;
-import dev.pk7r.spigot.starter.core.factory.bean.ListableBeanFactory;
+import dev.pk7r.spigot.starter.core.factory.BeanFactory;
+import dev.pk7r.spigot.starter.core.factory.ListableBeanFactory;
 import dev.pk7r.spigot.starter.core.model.BeanDefinition;
 import dev.pk7r.spigot.starter.core.model.BeanScope;
 import dev.pk7r.spigot.starter.core.registry.BeanDefinitionRegistry;
@@ -48,7 +48,7 @@ class DefaultBeanFactory implements ListableBeanFactory, BeanFactory {
     public <T> Collection<T> getBeansOfType(Class<T> requiredType) {
         return beanDefinitionRegistry.getBeanDefinitionsByType(requiredType)
                 .stream()
-                .map(beanDefinition -> (T) getBean(beanDefinition.getName(), beanDefinition.getType()))
+                .map(beanDefinition -> (T) getBean(beanDefinition.getName(), beanDefinition.getLiteralType()))
                 .collect(Collectors.toSet());
     }
 

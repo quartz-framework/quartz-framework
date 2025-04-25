@@ -1,4 +1,4 @@
-package dev.pk7r.spigot.starter.core.factory.event;
+package dev.pk7r.spigot.starter.core.factory;
 
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;

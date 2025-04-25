@@ -1,6 +1,6 @@
 package dev.pk7r.spigot.starter.core;
 
-import dev.pk7r.spigot.starter.core.factory.event.EventFactory;
+import dev.pk7r.spigot.starter.core.factory.EventFactory;
 import dev.pk7r.spigot.starter.core.util.ReflectionUtil;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

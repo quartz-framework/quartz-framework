@@ -21,7 +21,8 @@ public class ReflectionUtil {
 
     @SafeVarargs
     public Set<Field> getFields(Class<?> clazz, Class<? extends Annotation>... annotations) {
-        val fields = Reflect.on(clazz).fields().annotatedWith(annotations);
+        val fieldFinder = Reflect.on(clazz).fields();
+        val fields = annotations.length == 0 ? fieldFinder.all() : fieldFinder.annotatedWith(annotations);
         return new HashSet<>(fields);
     }
 }

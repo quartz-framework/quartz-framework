@@ -1,6 +1,6 @@
 package dev.pk7r.spigot.starter.core;
 
-import dev.pk7r.spigot.starter.core.context.PluginContext;
+import dev.pk7r.spigot.starter.core.context.SimplePluginContext;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,29 +15,22 @@ public abstract class SpigotApplication extends JavaPlugin {
 
     private SpigotApplication application;
 
-    private PluginContext context;
+    private SimplePluginContext context;
 
     @Override
-    public final void onLoad() {
+    public void onLoad() {
         setApplication(this);
     }
 
     @Override
-    public final void onEnable() {
-        setContext(new DefaultPluginContext(getApplication()));
-        onStart();
+    public void onEnable() {
+        setContext(new SimplePluginContext(getApplication()));
     }
 
     @Override
-    public final void onDisable() {
+    public void onDisable() {
         val context = getContext();
         if (Objects.isNull(context)) return;
         context.close();
-        onClose();
     }
-
-    public abstract void onStart();
-
-    public abstract void onClose();
-
 }

@@ -12,11 +12,11 @@ It helps developers to create more maintainable and extensible plugins, while re
 - [x] Dependency Injection with Field and Constructor Injection
 - [x] @Lazy bean initialization
 - [x] @Primary beans
+- [x] @Value for injecting externalized properties
 - [x] Singleton and Prototype scope support with @Scope
-- [x] Bean lifecycle control with @PostConstruct and @PreDestory
-- [x] Includes Lombok and MineDown inside
-- [x] SLF4J For Logging
+- [x] Bean lifecycle control with @PostConstruct and @PreDestroy
 - [x] Automatic event registration 
+- [x] Full [Aikar commands](https://github.com/aikar/commands) abstraction
 - [x] Lightweight compared to other frameworks
 - [x] Easy integration
 

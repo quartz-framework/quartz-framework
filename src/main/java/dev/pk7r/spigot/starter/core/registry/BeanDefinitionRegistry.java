@@ -14,6 +14,10 @@ public interface BeanDefinitionRegistry {
 
     void registerBeanDefinition(Class<?> clazz);
 
+    void registerSingletonBeanDefinition(Object instance);
+
+    void registerSingletonBeanDefinition(Class<?> clazz, Object instance);
+
     void registerSingletonBeanDefinition(String beanName, Class<?> clazz, Object instance);
 
     Set<BeanDefinition> getBeanDefinitions();
