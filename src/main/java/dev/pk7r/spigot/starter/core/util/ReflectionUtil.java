@@ -15,7 +15,8 @@ public class ReflectionUtil {
 
     @SafeVarargs
     public Set<Method> getMethods(Reflect.MethodType methodType, Class<?> clazz, Class<? extends Annotation>... annotations) {
-        val methods = Reflect.on(clazz).methods(methodType).annotatedWith(annotations);
+        val methodFinder = Reflect.on(clazz).methods(methodType);
+        val methods = methodFinder.annotatedWith(annotations);
         return new HashSet<>(methods);
     }
 

@@ -7,4 +7,8 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Bean {
 
+    String[] postConstructMethods() default {};
+
+    String[] preDestroyMethods() default {};
+
 }

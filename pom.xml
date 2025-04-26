@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>dev.pk7r</groupId>
     <artifactId>spigot-starter-core</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.1.0-SNAPSHOT</version>
     <name>spigot-starter-core</name>
     <description>Spigot Starter Core is a Spigot Plugin framework for creating lightweight, dependency-injection-based plugins for the Spigot Minecraft server.</description>
     <url>https://jorgedavi.com</url>
@@ -109,6 +109,16 @@
             <artifactId>classgraph</artifactId>
             <version>4.8.154</version>
         </dependency>
+        <dependency>
+            <groupId>co.aikar</groupId>
+            <artifactId>minecraft-timings</artifactId>
+            <version>1.0.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.cronutils</groupId>
+            <artifactId>cron-utils</artifactId>
+            <version>9.2.1</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -142,11 +152,14 @@
                         <filter>
                             <artifact>*:*</artifact>
                             <excludes>
-                                <exclude>module-info.class</exclude>
+                                <exclude>META-INF/*.MF</exclude>
                                 <exclude>META-INF/*.SF</exclude>
                                 <exclude>META-INF/*.DSA</exclude>
                                 <exclude>META-INF/*.RSA</exclude>
-                                <exclude>META-INF/*.MF</exclude>
+                                <exclude>META-INF/LICENSE*</exclude>
+                                <exclude>META-INF/NOTICE*</exclude>
+                                <exclude>META-INF/maven/**</exclude>
+                                <exclude>META-INF/versions/9/module-info.class</exclude>
                             </excludes>
                         </filter>
                     </filters>

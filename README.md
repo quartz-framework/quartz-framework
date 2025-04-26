@@ -10,13 +10,17 @@ It helps developers to create more maintainable and extensible plugins, while re
 ## Features
 
 - [x] Dependency Injection with Field and Constructor Injection
-- [x] @Lazy bean initialization
-- [x] @Primary beans
-- [x] @Value for injecting externalized properties
-- [x] Singleton and Prototype scope support with @Scope
-- [x] Bean lifecycle control with @PostConstruct and @PreDestroy
-- [x] Automatic event registration 
+- [x] `@Lazy` bean initialization
+- [x] Bean dependency with `@ConditionalOnBean`, `@ConditionalOnValue` and `@ConditionalOnClass`
+- [x] `@Primary` beans
+- [x] `@Value` for injecting externalized properties
+- [x] Singleton and Prototype scope support with `@Scope`
+- [x] Bean lifecycle control with `@PostConstruct` and `@PreDestroy`
+- [x] Automatic event registration
+- [x] Full `BukkitScheduler` abstraction with `@Job`
 - [x] Full [Aikar commands](https://github.com/aikar/commands) abstraction
+- [x] [TaskChain](https://github.com/aikar/TaskChain) abstraction for powerful tasks
+- [x] [MCTimings](https://github.com/aikar/minecraft-timings) abstraction for performance monitoring
 - [x] Lightweight compared to other frameworks
 - [x] Easy integration
 

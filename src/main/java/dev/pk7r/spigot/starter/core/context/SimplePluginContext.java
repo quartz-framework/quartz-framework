@@ -1,11 +1,14 @@
 package dev.pk7r.spigot.starter.core.context;
 
-import dev.pk7r.spigot.starter.core.DefaultPluginContext;
-import dev.pk7r.spigot.starter.core.SpigotApplication;
+import dev.pk7r.spigot.starter.core.application.ConfigurableApplication;
 
-public class SimplePluginContext extends DefaultPluginContext {
+public class SimplePluginContext extends AbstractPluginContext {
 
-    public SimplePluginContext(SpigotApplication application) {
-        super(application);
+    private SimplePluginContext(ConfigurableApplication application, Class<? extends ConfigurableApplication> applicationClass) {
+        super(application, applicationClass);
+    }
+
+    public static SimplePluginContext initialize(ConfigurableApplication application, Class<? extends ConfigurableApplication> applicationClass) {
+        return new SimplePluginContext(application, applicationClass);
     }
 }
