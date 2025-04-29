@@ -46,18 +46,13 @@
             <id>minebench-repo</id>
             <url>https://repo.minebench.de/</url>
         </repository>
-        <repository>
-            <id>aikar</id>
-            <url>https://repo.aikar.co/content/groups/aikar/</url>
-        </repository>
     </repositories>
 
     <dependencies>
         <dependency>
-            <groupId>co.aikar</groupId>
-            <artifactId>acf-paper</artifactId>
-            <version>0.5.1-SNAPSHOT</version>
-            <scope>compile</scope>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>4.7.7</version>
         </dependency>
         <dependency>
             <groupId>de.themoep</groupId>
@@ -110,14 +105,44 @@
             <version>4.8.154</version>
         </dependency>
         <dependency>
-            <groupId>co.aikar</groupId>
-            <artifactId>minecraft-timings</artifactId>
-            <version>1.0.4</version>
-        </dependency>
-        <dependency>
             <groupId>com.cronutils</groupId>
             <artifactId>cron-utils</artifactId>
             <version>9.2.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjrt</artifactId>
+            <version>1.9.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+            <version>1.9.7</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aop</artifactId>
+            <version>6.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+            <version>6.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>6.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-expression</artifactId>
+            <version>6.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.14.0</version>
         </dependency>
     </dependencies>
 

@@ -16,9 +16,9 @@ import java.util.stream.Collectors;
 @UtilityClass
 public class ClassUtil {
 
-    public boolean isClassLoaded(String className) {
+    public boolean isClassLoaded(String className, ClassLoader classLoader) {
         try {
-            Class.forName(className);
+            Class.forName(className, false, classLoader);
             return true;
         } catch (ClassNotFoundException exception) {
             return false;

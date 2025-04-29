@@ -1,26 +1,29 @@
 package dev.pk7r.spigot.starter.core.application;
 
-import dev.pk7r.spigot.starter.core.context.PluginContext;
+import dev.pk7r.spigot.starter.core.annotation.NoProxy;
+import dev.pk7r.spigot.starter.core.context.AbstractPluginContext;
 import dev.pk7r.spigot.starter.core.context.SimplePluginContext;
 import lombok.val;
 import org.bukkit.plugin.Plugin;
 
+import java.net.URLClassLoader;
 import java.util.Objects;
 
+@NoProxy
 public interface ConfigurableApplication extends Plugin {
 
-    PluginContext getContext();
+    AbstractPluginContext getContext();
 
     void main();
 
-    void setContext(PluginContext context);
+    void setContext(AbstractPluginContext context);
 
-    default void run(Class<? extends ConfigurableApplication> applicationClass) {
-        val context = SimplePluginContext.initialize(this, applicationClass);
+    default void run(Class<? extends ConfigurableApplication> applicationClass, URLClassLoader classLoader) {
+        val context = SimplePluginContext.initialize(this, applicationClass, classLoader);
         run(context);
     }
 
-    default void run(PluginContext context) {
+    default void run(AbstractPluginContext context) {
         setContext(context);
         context.start(this);
     }

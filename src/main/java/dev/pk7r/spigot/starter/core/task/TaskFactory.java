@@ -1,6 +1,7 @@
 package dev.pk7r.spigot.starter.core.task;
 
 import java.time.ZoneId;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 public interface TaskFactory {
@@ -11,11 +12,11 @@ public interface TaskFactory {
 
     TaskHandle submit(String executorName, Runnable task);
 
-    <T> TaskHandle submit(String executorName, java.util.concurrent.Callable<T> task);
+    <T> TaskHandle submit(String executorName, Callable<T> task);
 
     TaskHandle submitWithTimeout(String executorName, Runnable task, long timeout, TimeUnit unit);
 
-    <T> TaskHandle submitWithTimeout(String executorName, java.util.concurrent.Callable<T> task, long timeout, TimeUnit unit);
+    <T> TaskHandle submitWithTimeout(String executorName, Callable<T> task, long timeout, TimeUnit unit);
 
     TaskHandle schedule(String executorName, Runnable task, long delay, TimeUnit unit);
 

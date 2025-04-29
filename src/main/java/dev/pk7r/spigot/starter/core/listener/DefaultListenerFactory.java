@@ -1,27 +1,30 @@
 package dev.pk7r.spigot.starter.core.listener;
 
-import dev.pk7r.spigot.starter.core.util.ReflectionUtil;
+import dev.pk7r.spigot.starter.core.annotation.Listen;
+import dev.pk7r.spigot.starter.core.annotation.NoProxy;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.val;
 import org.bukkit.event.*;
-import org.bukkit.plugin.EventExecutor;
 import org.bukkit.plugin.Plugin;
-import org.pacesys.reflect.Reflect;
+import org.springframework.aop.support.AopUtils;
+import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 @Getter
+@NoProxy
 @RequiredArgsConstructor
 class DefaultListenerFactory implements ListenerFactory {
 
     private final Plugin plugin;
 
-    @Override
-    public void registerEvents(Listener listener) {
-        getListenerMethods(listener).forEach(method -> registerEvents(listener, method));
+    private final PluginEventExecutor executor;
+
+    public void registerEvents(Object bean) {
+        getListenerMethods(bean).forEach(method -> registerEvent(bean, method));
     }
 
     @Override
@@ -30,38 +33,35 @@ class DefaultListenerFactory implements ListenerFactory {
     }
 
     @SuppressWarnings("unchecked")
-    private void registerEvents(Listener listener, Method method) {
-        val handler = method.getAnnotation(EventHandler.class);
+    private void registerEvent(Object bean, Method method) {
+        val server = plugin.getServer();
         val eventType = (Class<? extends Event>) method.getParameters()[0].getType();
-        getPlugin().getServer().getPluginManager().registerEvent(
+        val eventHandler = method.getAnnotation(EventHandler.class);
+        val listen = method.getAnnotation(Listen.class);
+        val priority = eventHandler != null
+                ? eventHandler.priority()
+                : (listen != null ? listen.priority() : EventPriority.NORMAL);
+        val ignoreCancelled = eventHandler != null
+                ? eventHandler.ignoreCancelled()
+                : (listen != null && listen.ignoreCancelled());
+        Listener listener = (bean instanceof Listener) ? (Listener) bean : new Listener() {}; // if not, create dummy
+        server.getPluginManager().registerEvent(
                 eventType,
                 listener,
-                handler == null ? EventPriority.NORMAL : handler.priority(),
-                create(method),
-                getPlugin(),
-                handler == null || handler.ignoreCancelled());
+                priority,
+                getExecutor().create(bean, method),
+                plugin,
+                ignoreCancelled
+        );
     }
 
-    private Stream<Method> getListenerMethods(Listener listener) {
-        val target = listener.getClass();
-        return ReflectionUtil.getMethods(Reflect.MethodType.INSTANCE, target, EventHandler.class)
-                .stream()
-                .filter(method -> method.getParameters().length == 1)
-                .filter(method -> Event.class.isAssignableFrom(method.getParameters()[0].getType()));
-    }
-
-    public EventExecutor create(Method method) {
-        val eventType = method.getParameters()[0].getType();
-        return (listener, event) -> {
-            if (!eventType.isInstance(event)) return;
-            triggerEvent(method, listener, event);
-        };
-    }
-
-    @SneakyThrows
-    private void triggerEvent(Method method, Listener listener, Event event) {
-        method.setAccessible(true);
-        method.invoke(listener, event);
-        method.setAccessible(false);
+    private Stream<Method> getListenerMethods(Object bean) {
+        val target = AopUtils.getTargetClass(bean);
+        return Arrays.stream(ReflectionUtils.getAllDeclaredMethods(target))
+                .filter(method ->
+                        (method.isAnnotationPresent(EventHandler.class) || method.isAnnotationPresent(dev.pk7r.spigot.starter.core.annotation.Listen.class))
+                                && method.getParameters().length == 1
+                                && Event.class.isAssignableFrom(method.getParameters()[0].getType())
+                );
     }
 }

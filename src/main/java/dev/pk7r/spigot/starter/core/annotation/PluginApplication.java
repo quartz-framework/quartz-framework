@@ -7,7 +7,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface PluginApplication {
 
-    String[] basePackages();
+    String[] basePackages() default {};
 
     Class<?>[] excludeClasses() default {};
 
@@ -15,6 +15,6 @@ public @interface PluginApplication {
 
     boolean verbose() default false;
 
-    boolean enableAutoConfiguration() default true;
+    boolean enableConfigurers() default true;
 
 }

@@ -1,13 +1,15 @@
 package dev.pk7r.spigot.starter.core.context;
 
+import dev.pk7r.spigot.starter.core.annotation.NoProxy;
 import dev.pk7r.spigot.starter.core.annotation.PluginApplication;
-import dev.pk7r.spigot.starter.core.bean.factory.BeanFactory;
-import dev.pk7r.spigot.starter.core.bean.registry.BeanDefinitionRegistry;
+import dev.pk7r.spigot.starter.core.bean.factory.PluginBeanFactory;
+import dev.pk7r.spigot.starter.core.bean.registry.PluginBeanDefinitionRegistry;
 import dev.pk7r.spigot.starter.core.bean.strategy.BeanNameStrategy;
 import org.bukkit.plugin.Plugin;
 
 import java.util.UUID;
 
+@NoProxy
 public interface PluginContext {
 
     UUID getId();
@@ -26,9 +28,9 @@ public interface PluginContext {
         return getPlugin().isEnabled();
     }
 
-    BeanFactory getBeanFactory();
+    PluginBeanFactory getBeanFactory();
 
     BeanNameStrategy getBeanNameStrategy();
 
-    BeanDefinitionRegistry getBeanDefinitionRegistry();
+    PluginBeanDefinitionRegistry getBeanDefinitionRegistry();
 }

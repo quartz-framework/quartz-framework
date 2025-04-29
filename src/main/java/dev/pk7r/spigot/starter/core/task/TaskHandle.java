@@ -1,5 +1,6 @@
 package dev.pk7r.spigot.starter.core.task;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.concurrent.Future;
@@ -7,6 +8,7 @@ import java.util.concurrent.Future;
 @RequiredArgsConstructor
 public class TaskHandle {
 
+    @Getter
     private final Future<?> future;
 
     public boolean cancel() {

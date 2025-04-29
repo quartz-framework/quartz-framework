@@ -1,9 +1,8 @@
 package dev.pk7r.spigot.starter.core.property;
 
-import dev.pk7r.spigot.starter.core.bean.factory.BeanFactory;
-import dev.pk7r.spigot.starter.core.convert.ConvertService;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
+import org.springframework.core.convert.ConversionService;
 
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -15,7 +14,7 @@ public class DefaultPropertyPostProcessor implements PropertyPostProcessor {
 
     private final PropertySourceFactory propertySourceFactory;
 
-    private final BeanFactory beanFactory;
+    private final ConversionService conversionService;
 
     @Override
     public <T> T process(String match, String source, Class<T> type) {
@@ -27,20 +26,19 @@ public class DefaultPropertyPostProcessor implements PropertyPostProcessor {
         val fallback = matcher.group(2);
         val propertySource = propertySourceFactory.get(source);
         val sourceValue = propertySource.getString(key);
-        val convertService = getConvertService(type);
         if (sourceValue != null) {
             val isEnv = ENV_VAR_PATTERN.matcher(sourceValue).matches();
             if (isEnv) {
                 return process(sourceValue, source, type);
             }
-            return convertService.convert(sourceValue);
+            return conversionService.convert(sourceValue, type);
         }
         val environmentVariableValue = getEnvironmentVariables().get(key);
         if (environmentVariableValue != null) {
-            return convertService.convert(environmentVariableValue);
+            return conversionService.convert(environmentVariableValue, type);
         }
         if (fallback != null) {
-            return convertService.convert(fallback);
+            return conversionService.convert(fallback, type);
         }
         throw new IllegalArgumentException("Could not find property: " + key);
     }
@@ -50,12 +48,4 @@ public class DefaultPropertyPostProcessor implements PropertyPostProcessor {
         return System.getenv();
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> ConvertService<T> getConvertService(Class<T> type) {
-        return (ConvertService<T>) beanFactory.getBeansOfType(ConvertService.class)
-                .stream()
-                .filter(service -> service.supports(type))
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No ConvertService found for type: " + type.getName()));
-    }
 }

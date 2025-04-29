@@ -1,11 +1,17 @@
 package dev.pk7r.spigot.starter.core.application;
 
-import dev.pk7r.spigot.starter.core.context.PluginContext;
+import dev.pk7r.spigot.starter.core.annotation.NoProxy;
+import dev.pk7r.spigot.starter.core.condition.annotation.ActivateWhenClassPresent;
+import dev.pk7r.spigot.starter.core.context.AbstractPluginContext;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.net.URLClassLoader;
+
+@NoProxy
+@ActivateWhenClassPresent(JavaPlugin.class)
 public abstract class SpigotApplication extends JavaPlugin implements ConfigurableApplication {
 
-    private PluginContext context;
+    private AbstractPluginContext context;
 
     @Override
     public final void onEnable() {
@@ -18,12 +24,16 @@ public abstract class SpigotApplication extends JavaPlugin implements Configurab
     }
 
     @Override
-    public PluginContext getContext() {
+    public AbstractPluginContext getContext() {
         return this.context;
     }
 
     @Override
-    public void setContext(PluginContext context) {
+    public void setContext(AbstractPluginContext context) {
         this.context = context;
+    }
+
+    public void run(Class<? extends SpigotApplication> applicationClass) {
+        run(applicationClass, (URLClassLoader) getClassLoader());
     }
 }
