@@ -2,33 +2,23 @@
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>dev.pk7r</groupId>
-    <artifactId>spigot-starter-core</artifactId>
-    <version>1.1.0-SNAPSHOT</version>
-    <name>spigot-starter-core</name>
-    <description>Spigot Starter Core is a Spigot Plugin framework for creating lightweight, dependency-injection-based plugins for the Spigot Minecraft server.</description>
-    <url>https://jorgedavi.com</url>
+    <groupId>xyz.quartzframework</groupId>
+    <artifactId>quartz-core</artifactId>
+    <version>1.0.0-RELEASE</version>
+    <url>https://quartzframework.xyz</url>
     <inceptionYear>2023</inceptionYear>
 
     <licenses>
         <license>
             <name>MIT</name>
-            <url>https://github.com/pk7r/spigot-starter-core/blob/main/LICENSE</url>
+            <url>https://github.com/quartz-framework/quartz-core/blob/main/LICENSE</url>
         </license>
     </licenses>
 
-    <developers>
-        <developer>
-            <name>pk7r</name>
-            <url>https://github.com/pk7r</url>
-            <organizationUrl>https://jorgedavi.com</organizationUrl>
-        </developer>
-    </developers>
-
     <scm>
-        <connection>scm:git://github.com/pk7r/spigot-starter-core.git</connection>
-        <developerConnection>scm:git://github.com/pk7r/spigot-starter-core.git</developerConnection>
-        <url>git://github.com/pk7r/spigot-starter-core.git</url>
+        <connection>scm:git://github.com/quartz-framework/quartz-core.git</connection>
+        <developerConnection>scm:git://github.com/quartz-framework/quartz-core.git</developerConnection>
+        <url>git://github.com/quartz-framework/quartz-core.git</url>
     </scm>
 
     <properties>
