@@ -53,7 +53,7 @@ public class ClassUtil {
 
     private String[] wrapPackages(String[] packages) {
         val wrappedPackages = Arrays.copyOf(packages, packages.length + 1);
-        wrappedPackages[packages.length] = "xyz.quartzframework.core";
+        wrappedPackages[packages.length] = "xyz.quartzframework.*";
         return wrappedPackages;
     }
 }
