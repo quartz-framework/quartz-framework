@@ -1,6 +1,7 @@
 package xyz.quartzframework.core.convert;
 
-import org.bukkit.configuration.ConfigurationSection;
+import lombok.val;
+import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
 import xyz.quartzframework.core.annotation.ContextBootstrapper;
@@ -17,8 +18,8 @@ public class ConvertContextBootstrapper {
     @Provide
     @ActivateWhenBeanMissing(ConversionService.class)
     ConversionService conversionService() {
-        DefaultConversionService conversionService = new DefaultConversionService();
-        conversionService.addConverter(ConfigurationSection.class, Map.class, (s) -> s.getValues(true));
-        return conversionService;
+        val service = new DefaultConversionService();
+        service.addConverter(ConfigurationSection.class, Map.class, (s) -> s.getValues(true));
+        return service;
     }
 }

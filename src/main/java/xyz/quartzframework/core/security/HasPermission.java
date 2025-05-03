@@ -2,6 +2,7 @@ package xyz.quartzframework.core.security;
 
 import org.springframework.core.annotation.AliasFor;
 import xyz.quartzframework.core.exception.PermissionDeniedException;
+import xyz.quartzframework.core.session.SenderSession;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -17,7 +18,7 @@ import java.lang.annotation.Target;
 public @interface HasPermission {
 
     /**
-     * The permission array to be checked over the current sender in the {@link xyz.quartzframework.core.session.PlayerSession}.
+     * The permission array to be checked over the current sender in the {@link SenderSession}.
      * All permissions must be satisfied to the call be allowed.
      */
     @AliasFor(annotation = PluginAuthorize.class, attribute = "params")

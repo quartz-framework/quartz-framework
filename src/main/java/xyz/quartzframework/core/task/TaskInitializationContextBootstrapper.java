@@ -4,11 +4,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import xyz.quartzframework.core.annotation.ContextBootstrapper;
-import xyz.quartzframework.core.annotation.Listen;
+import xyz.quartzframework.core.annotation.ContextStarts;
 import xyz.quartzframework.core.annotation.NoProxy;
+import xyz.quartzframework.core.bean.factory.PluginBeanFactory;
 import xyz.quartzframework.core.condition.annotation.ActivateWhenAnnotationPresent;
-import xyz.quartzframework.core.context.AbstractPluginContext;
-import xyz.quartzframework.core.event.ContextStartedEvent;
+import xyz.quartzframework.core.context.QuartzContext;
 import xyz.quartzframework.core.util.InjectionUtil;
 
 import javax.annotation.PreDestroy;
@@ -21,7 +21,7 @@ import java.time.ZoneId;
 @ActivateWhenAnnotationPresent(EnableRepeatedTasks.class)
 public class TaskInitializationContextBootstrapper {
 
-    private final AbstractPluginContext pluginContext;
+    private final PluginBeanFactory pluginBeanFactory;
 
     private final TaskFactory taskFactory;
 
@@ -30,12 +30,9 @@ public class TaskInitializationContextBootstrapper {
         taskFactory.shutdownAll();
     }
 
-    @Listen
-    public void onStart(ContextStartedEvent event) {
-        val context = event.getContext();
-        if (!context.getId().equals(pluginContext.getId())) {
-            return;
-        }
+    @ContextStarts
+    public void onStart() {
+        val context = pluginBeanFactory.getBean(QuartzContext.class);
         val beanDefinitionRegistry = context.getBeanDefinitionRegistry();
         val beanFactory = context.getBeanFactory();
         beanDefinitionRegistry

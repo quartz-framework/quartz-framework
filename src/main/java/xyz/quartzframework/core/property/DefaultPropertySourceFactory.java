@@ -3,8 +3,8 @@ package xyz.quartzframework.core.property;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.val;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.Plugin;
+import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
+import xyz.quartzframework.core.QuartzPlugin;
 
 import java.io.File;
 import java.util.HashMap;
@@ -15,7 +15,7 @@ public class DefaultPropertySourceFactory implements PropertySourceFactory {
 
     private final Map<String, PropertySource> sources = new HashMap<>();
 
-    private final Plugin plugin;
+    private final QuartzPlugin<?> plugin;
 
     @Override
     public PropertySource get(String name) {

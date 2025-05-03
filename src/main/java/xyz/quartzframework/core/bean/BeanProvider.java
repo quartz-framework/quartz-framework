@@ -3,6 +3,7 @@ package xyz.quartzframework.core.bean;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.core.ResolvableType;
+import org.springframework.lang.NonNull;
 import xyz.quartzframework.core.bean.factory.PluginBeanFactory;
 
 import java.util.Optional;
@@ -15,6 +16,7 @@ public class BeanProvider<T> implements ObjectProvider<T> {
 
     private final Class<T> type;
 
+    @NonNull
     @Override
     public Stream<T> stream() {
         return factory.getBeansOfType(type).values().stream();

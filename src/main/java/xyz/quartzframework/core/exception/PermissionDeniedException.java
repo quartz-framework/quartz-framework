@@ -1,10 +1,9 @@
 package xyz.quartzframework.core.exception;
 
 import lombok.Getter;
-import org.bukkit.command.CommandException;
 
 @Getter
-public class PermissionDeniedException extends CommandException {
+public class PermissionDeniedException extends RuntimeException {
 
     private final String permission;
 

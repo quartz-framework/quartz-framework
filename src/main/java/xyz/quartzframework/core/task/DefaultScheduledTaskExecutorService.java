@@ -85,7 +85,7 @@ public class DefaultScheduledTaskExecutorService implements ScheduledTaskExecuto
 
     private TaskHandle scheduleNextCron(Runnable task, ExecutionTime executionTime, ZoneId zoneId) {
         Optional<Duration> nextExecution = executionTime.timeToNextExecution(ZonedDateTime.now(zoneId));
-        if (!nextExecution.isPresent()) {
+        if (nextExecution.isEmpty()) {
             return null;
         }
         long delayMillis = nextExecution.get().toMillis();

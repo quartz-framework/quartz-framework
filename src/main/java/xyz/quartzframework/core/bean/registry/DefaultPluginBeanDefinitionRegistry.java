@@ -4,9 +4,8 @@ import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.pacesys.reflect.Reflect;
 import org.springframework.beans.factory.config.BeanDefinition;
-import xyz.quartzframework.core.annotation.Listen;
-import xyz.quartzframework.core.annotation.NoProxy;
-import xyz.quartzframework.core.annotation.Provide;
+import org.springframework.core.ResolvableType;
+import xyz.quartzframework.core.annotation.*;
 import xyz.quartzframework.core.bean.PluginBeanDefinition;
 import xyz.quartzframework.core.bean.strategy.BeanNameStrategy;
 import xyz.quartzframework.core.condition.annotation.*;
@@ -53,7 +52,6 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
                 .anyMatch(b -> b.getName().equals(beanName));
     }
 
-    @NonNull
     @Override
     public String[] getBeanDefinitionNames() {
         return getBeanDefinitions()
@@ -133,6 +131,7 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
                 .environments(BeanUtil.getEnvironments(clazz))
                 .literalType(clazz)
                 .order(BeanUtil.getOrder(clazz))
+                .resolvableType(ResolvableType.forClass(clazz))
                 .beanConditionMetadata(BeanConditionMetadata.of(clazz.getAnnotation(ActivateWhenBeanPresent.class)))
                 .missingBeanConditionMetadata(BeanConditionMetadata.of(clazz.getAnnotation(ActivateWhenBeanMissing.class)))
                 .classConditionMetadata(ClassConditionMetadata.of(clazz.getAnnotation(ActivateWhenClassPresent.class)))
@@ -140,9 +139,7 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
                 .propertyConditionMetadata(PropertyConditionMetadata.of(clazz.getAnnotation(ActivateWhenPropertyEquals.class)))
                 .annotationConditionMetadata(AnnotationConditionMetadata.of(clazz.getAnnotation(ActivateWhenAnnotationPresent.class)))
                 .genericConditionMetadata(GenericConditionMetadata.of(clazz.getAnnotation(ActivateWhen.class)))
-                .postConstructMethods(lifecycleMethods.getOrDefault(PostConstruct.class, Collections.emptyList()))
-                .preDestroyMethods(lifecycleMethods.getOrDefault(PreDestroy.class, Collections.emptyList()))
-                .repeatedTasksMethods(lifecycleMethods.getOrDefault(RepeatedTask.class, Collections.emptyList()))
+                .lifecycleMethods(lifecycleMethods)
                 .listenMethods(listenMethods.getOrDefault(Listen.class, Collections.emptyList()))
                 .build();
         registerBeanDefinition(definition.getName(), definition);
@@ -174,6 +171,7 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
                     .singleton(BeanUtil.isSingleton(method))
                     .prototype(BeanUtil.isPrototype(method))
                     .type(method.getReturnType())
+                    .resolvableType(ResolvableType.forMethodReturnType(method))
                     .literalType(clazz)
                     .aspect(BeanUtil.isAspect(method.getReturnType()))
                     .beanConditionMetadata(BeanConditionMetadata.of(method.getAnnotation(ActivateWhenBeanPresent.class)))
@@ -188,14 +186,20 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
         }
     }
 
+    @SuppressWarnings("unchecked")
     private Map<Class<? extends Annotation>, List<Method>> mapLifecycleMethods(Class<?> clazz) {
-        val methods = ReflectionUtil.getMethods(Reflect.MethodType.INSTANCE, clazz, PostConstruct.class, PreDestroy.class, RepeatedTask.class);
+        Class<? extends Annotation>[] annotations = new Class[]{PostConstruct.class,
+                PreDestroy.class,
+                RepeatedTask.class,
+                ContextStarts.class,
+                ContextLoads.class};
+        val methods = ReflectionUtil.getMethods(Reflect.MethodType.INSTANCE, clazz, annotations);
         val map = new HashMap<Class<? extends Annotation>, List<Method>>();
         for (val method : methods) {
             if (method.getParameterCount() > 0 || !method.getReturnType().equals(Void.TYPE)) {
                 throw new LifecycleException("Lifecycle methods must have no parameters and return void");
             }
-            for (val annotation : Arrays.asList(PostConstruct.class, PreDestroy.class, RepeatedTask.class)) {
+            for (val annotation : annotations) {
                 if (method.isAnnotationPresent(annotation)) {
                     map.computeIfAbsent(annotation, k -> new ArrayList<>()).add(method);
                 }
@@ -271,6 +275,7 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
                 .type(clazz)
                 .internalBean(true)
                 .literalType(clazz)
+                .resolvableType(ResolvableType.forClass(clazz))
                 .instance(instance)
                 .injected(true)
                 .build();
@@ -310,6 +315,7 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
         } else {
             definition.setType(instance.getClass());
         }
+        definition.setResolvableType(ResolvableType.forInstance(instance));
         definition.setInjected(true);
         definition.setInstance(instance);
     }
@@ -317,12 +323,13 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
     @Override
     public Predicate<PluginBeanDefinition> filterBeanDefinition(Class<?> requiredType) {
         return beanDefinition -> {
-            val b = getBeanDefinitions().stream().map(PluginBeanDefinition::getName).collect(Collectors.toList());
+            val b = getBeanDefinitions().stream().map(PluginBeanDefinition::getName).toList();
             if (!beanDefinition.isInternalBean()) {
-                return requiredType.isAssignableFrom(beanDefinition.getType());
+                return requiredType.isAssignableFrom(beanDefinition.getType()) || beanDefinition.getResolvableType().isAssignableFrom(requiredType);
             }
             return requiredType.isAssignableFrom(beanDefinition.getType()) ||
-                    requiredType.isAssignableFrom(beanDefinition.getLiteralType());
+                    requiredType.isAssignableFrom(beanDefinition.getLiteralType())
+                    || beanDefinition.getResolvableType().isAssignableFrom(requiredType);
         };
     }
 }

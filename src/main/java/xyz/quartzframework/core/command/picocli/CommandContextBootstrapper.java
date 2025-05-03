@@ -9,8 +9,6 @@ import xyz.quartzframework.core.annotation.*;
 import xyz.quartzframework.core.bean.factory.PluginBeanFactory;
 import xyz.quartzframework.core.command.*;
 import xyz.quartzframework.core.common.Pair;
-import xyz.quartzframework.core.condition.annotation.ActivateWhenBeanMissing;
-import xyz.quartzframework.core.session.PlayerSession;
 import xyz.quartzframework.core.util.InjectionUtil;
 
 import java.util.ArrayList;
@@ -38,7 +36,7 @@ public class CommandContextBootstrapper {
         val commandCandidates = new ArrayList<>(candidates.values());
         val unwrappedCandidates = commandCandidates.stream()
                 .map(InjectionUtil::unwrapIfProxy)
-                .collect(Collectors.toList());
+                .toList();
         unwrappedCandidates.forEach(candidate -> {
             val candidateClass = candidate.getClass();
             if (!isMainCommand(candidateClass)) {
@@ -58,20 +56,6 @@ public class CommandContextBootstrapper {
         });
         Object mainCommand = new BaseCommand();
         return register(new CommandLineDefinition(mainCommand, factory), factory);
-    }
-
-    @Provide
-    @Priority(1)
-    @ActivateWhenBeanMissing(CommandExecutor.class)
-    CommandExecutor commandExecutor(CommandLineDefinition commandLineDefinition) {
-        return new DefaultCommandExecutor(pluginBeanFactory, commandLineDefinition);
-    }
-
-    @Provide
-    @Priority(2)
-    @Preferred
-    CommandInterceptor commandInterceptor(PlayerSession session, CommandExecutor executor, CommandService service) {
-        return new CommandInterceptor(session, executor, service);
     }
 
     private boolean isMainCommand(Class<?> type) {

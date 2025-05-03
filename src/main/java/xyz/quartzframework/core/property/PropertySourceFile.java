@@ -2,8 +2,8 @@ package xyz.quartzframework.core.property;
 
 import lombok.SneakyThrows;
 import lombok.experimental.Delegate;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
+import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
+import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
 
 import java.io.File;
 

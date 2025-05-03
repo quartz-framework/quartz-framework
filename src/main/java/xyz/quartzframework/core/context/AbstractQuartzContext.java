@@ -1,23 +1,19 @@
 package xyz.quartzframework.core.context;
 
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.bukkit.event.HandlerList;
-import org.bukkit.plugin.Plugin;
+import org.springframework.lang.Nullable;
 import xyz.quartzframework.core.annotation.Configurer;
 import xyz.quartzframework.core.annotation.NoProxy;
 import xyz.quartzframework.core.annotation.PluginApplication;
-import xyz.quartzframework.core.application.ConfigurableApplication;
+import xyz.quartzframework.core.QuartzPlugin;
 import xyz.quartzframework.core.bean.PluginBeanDefinition;
-import xyz.quartzframework.core.bean.factory.DefaultPluginBeanFactory;
 import xyz.quartzframework.core.bean.factory.PluginBeanFactory;
-import xyz.quartzframework.core.bean.registry.DefaultPluginBeanDefinitionRegistry;
 import xyz.quartzframework.core.bean.registry.PluginBeanDefinitionRegistry;
 import xyz.quartzframework.core.bean.strategy.BeanNameStrategy;
-import xyz.quartzframework.core.bean.strategy.DefaultBeanNameStrategy;
 import xyz.quartzframework.core.condition.Evaluators;
-import xyz.quartzframework.core.event.*;
 import xyz.quartzframework.core.exception.ContextInitializationException;
 import xyz.quartzframework.core.util.BeanUtil;
 import xyz.quartzframework.core.util.ClassUtil;
@@ -27,139 +23,123 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Slf4j
 @Getter
 @NoProxy
-public abstract class AbstractPluginContext implements PluginContext {
+public abstract class AbstractQuartzContext<T> implements QuartzContext<T> {
 
     private final UUID id = UUID.randomUUID();
 
     private final long initializationTime = System.currentTimeMillis();
 
-    private Plugin plugin;
-
-    private final URLClassLoader classLoader;
-
     private final PluginApplication pluginApplication;
 
-    private final PluginBeanFactory beanFactory;
+    private final Class<? extends QuartzPlugin<T>> pluginClass;
 
-    private final ConfigurableApplication configurableApplication;
+    @Setter
+    private URLClassLoader classLoader;
 
-    private final Class<? extends ConfigurableApplication> applicationClass;
+    @Setter
+    private QuartzPlugin<T> quartzPlugin;
 
-    private final BeanNameStrategy beanNameStrategy;
+    @Setter
+    private PluginBeanFactory beanFactory;
 
-    private final PluginBeanDefinitionRegistry beanDefinitionRegistry;
+    @Setter
+    private BeanNameStrategy beanNameStrategy;
 
-    public AbstractPluginContext(ConfigurableApplication application,
-                                 Class<? extends ConfigurableApplication> applicationClass,
-                                 URLClassLoader classLoader) {
-        this(application, applicationClass, new DefaultBeanNameStrategy(), classLoader);
+    @Setter
+    private PluginBeanDefinitionRegistry beanDefinitionRegistry;
+
+    public AbstractQuartzContext(Class<? extends QuartzPlugin<T>> pluginClass) {
+        this(pluginClass, null, null, null, null);
     }
 
-    public AbstractPluginContext(ConfigurableApplication application,
-                                 Class<? extends ConfigurableApplication> applicationClass,
-                                 BeanNameStrategy beanNameStrategy,
-                                 URLClassLoader classLoader) {
-        this(application, applicationClass, new DefaultPluginBeanDefinitionRegistry(beanNameStrategy), beanNameStrategy, classLoader);
-    }
-
-    public AbstractPluginContext(ConfigurableApplication application,
-                                 Class<? extends ConfigurableApplication> applicationClass,
-                                 PluginBeanDefinitionRegistry beanDefinitionRegistry,
-                                 BeanNameStrategy beanNameStrategy,
-                                 URLClassLoader classLoader) {
-        this(application, applicationClass, beanDefinitionRegistry, beanNameStrategy, new DefaultPluginBeanFactory(classLoader, beanDefinitionRegistry, beanNameStrategy), classLoader);
-    }
-
-    public AbstractPluginContext(ConfigurableApplication application,
-                                 Class<? extends ConfigurableApplication> applicationClass,
-                                 PluginBeanDefinitionRegistry beanDefinitionRegistry,
-                                 BeanNameStrategy beanNameStrategy,
-                                 PluginBeanFactory beanFactory,
-                                 URLClassLoader classLoader) {
-        synchronized (AbstractPluginContext.class) {
-            if (!applicationClass.isAnnotationPresent(PluginApplication.class)) {
+    public AbstractQuartzContext(Class<? extends QuartzPlugin<T>> pluginClass,
+                                 @Nullable PluginBeanDefinitionRegistry beanDefinitionRegistry,
+                                 @Nullable BeanNameStrategy beanNameStrategy,
+                                 @Nullable PluginBeanFactory beanFactory,
+                                 @Nullable URLClassLoader classLoader) {
+        synchronized (AbstractQuartzContext.class) {
+            if (!pluginClass.isAnnotationPresent(PluginApplication.class)) {
                 throw new ContextInitializationException("Application class must be annotated with @PluginApplication");
             }
-            this.pluginApplication = application.getClass().getAnnotation(PluginApplication.class);
+            this.pluginApplication = pluginClass.getAnnotation(PluginApplication.class);
             this.beanFactory = beanFactory;
             this.beanNameStrategy = beanNameStrategy;
             this.beanDefinitionRegistry = beanDefinitionRegistry;
             this.classLoader = classLoader;
-            this.applicationClass = applicationClass;
-            this.configurableApplication = application;
-            getBeanDefinitionRegistry().registerSingletonBeanDefinition(URLClassLoader.class, classLoader);
-            getBeanDefinitionRegistry().registerSingletonBeanDefinition(ConfigurableApplication.class, application);
-            getBeanDefinitionRegistry().registerSingletonBeanDefinition(applicationClass, application);
-            getBeanDefinitionRegistry().registerSingletonBeanDefinition(PluginContext.class, this);
-            getBeanDefinitionRegistry().registerSingletonBeanDefinition(AbstractPluginContext.class, this);
+            this.pluginClass = pluginClass;
          }
     }
 
     @Override
-    public void start(Plugin plugin) {
-        log.info("Starting {} context...", plugin.getName());
-        setPlugin(plugin);
+    public void start(QuartzPlugin<T> quartzPlugin) {
+        log.info("Starting '{}' context...", getId());
+        setQuartzPlugin(quartzPlugin);
+        performInitializationChecks();
+        registerDefaultBeans();
         scanAndRegisterInjectables();
         validateAndCleanInvalidBeans();
         logActiveProfiles();
-        constructPhase(PluginBeanDefinition::isAspect,
+        phase(PluginBeanDefinition::isAspect,
                 (b) ->
                         !b.isContextBootstrapper() &&
                         !b.isBootstrapper() &&
                         !b.isConfigurer(),
-                "Aspect Phase");
-        constructPhase(PluginBeanDefinition::isContextBootstrapper,
+                true,
+                (b) -> b.construct(getBeanFactory()));
+        phase(PluginBeanDefinition::isContextBootstrapper,
                 (b) ->
                         !b.isAspect() &&
                         !b.isBootstrapper() &&
                         !b.isConfigurer(),
-                "Context Bootstrap Phase");
-        constructPhase(PluginBeanDefinition::isConfigurer,
+                true,
+                (b) -> b.construct(getBeanFactory()));
+        phase(PluginBeanDefinition::isConfigurer,
                 (b) ->
                         !b.isAspect() &&
                         !b.isBootstrapper() &&
                         !b.isContextBootstrapper(),
-                "Context Configurers Phase");
-        constructPhase(PluginBeanDefinition::isBootstrapper,
+                true,
+                (b) -> b.construct(getBeanFactory()));
+        phase(PluginBeanDefinition::isBootstrapper,
                 (b) ->
                         !b.isAspect() &&
                         !b.isConfigurer() &&
                         !b.isContextBootstrapper(),
-                "Bootstrap Phase");
-        fireContextEvent(new ContextLoadedEvent(this));
-        constructPhase(b -> !b.isInitialized(),
+                true,
+                (b) -> b.construct(getBeanFactory()));
+        phase(PluginBeanDefinition::isInitialized,
+                PluginBeanDefinition::isInjected,
+                false,
+                b -> b.triggerLoadMethods(getBeanFactory()));
+        phase(b -> !b.isInitialized(),
                 (b) ->
                         !b.isBootstrapper() &&
                         !b.isAspect() &&
                         !b.isConfigurer() &&
                         !b.isContextBootstrapper(),
-                "Main Phase");
-        fireContextEvent(new ContextStartedEvent(this));
+                true,
+                (b) -> b.construct(getBeanFactory()));
+        phase(PluginBeanDefinition::isInitialized,
+                PluginBeanDefinition::isInjected,
+                false,
+                b -> b.triggerStartMethods(getBeanFactory()));
         logStartupTime();
     }
 
     @Override
     public void close() {
-        fireContextEvent(new ContextCloseEvent(this));
-        getBeanDefinitionRegistry()
-                .getBeanDefinitions()
-                .stream()
-                .filter(PluginBeanDefinition::isInjected)
-                .forEach(b -> b.preDestroy(getBeanFactory()));
+        phase(PluginBeanDefinition::isInitialized,
+                PluginBeanDefinition::isInjected,
+                false,
+                b -> b.preDestroy(getBeanFactory()));
         getBeanDefinitionRegistry().getBeanDefinitions().clear();
-        HandlerList.unregisterAll(getPlugin());
-    }
-
-    @Override
-    public void setPlugin(Plugin plugin) {
-        this.plugin = plugin;
     }
 
     private void scanAndRegisterInjectables() {
@@ -168,7 +148,7 @@ public abstract class AbstractPluginContext implements PluginContext {
                 getPluginApplication().basePackages(),
                 getPluginApplication().exclude(),
                 (b -> BeanUtil.isInjectable(b) && isIncluded.test(b)),
-                getPluginApplication().verbose());
+                isVerbose());
         val discovery = injectables
                 .stream()
                 .map(BeanUtil::discovery)
@@ -176,12 +156,12 @@ public abstract class AbstractPluginContext implements PluginContext {
                 .flatMap(Arrays::stream)
                 .filter(s -> !Arrays.asList(pluginApplication.basePackages()).contains(s))
                 .toArray(String[]::new);
-        val mainDiscovery = BeanUtil.discovery(getApplicationClass());
+        val mainDiscovery = BeanUtil.discovery(getPluginClass());
         val discoverResult = ClassUtil.scan(
                 Stream.concat(Arrays.stream(mainDiscovery), Arrays.stream(discovery)).toArray(String[]::new),
                 getPluginApplication().exclude(),
                 (b -> BeanUtil.isInjectable(b) && isIncluded.test(b) && !injectables.contains(b)),
-                getPluginApplication().verbose());
+                isVerbose());
         injectables.addAll(discoverResult);
         val imports = injectables
                 .stream()
@@ -197,7 +177,7 @@ public abstract class AbstractPluginContext implements PluginContext {
                         }
                     }
                 })
-                .collect(Collectors.toList());
+                .toList();
         injectables.addAll(imports);
         log.info("Scan found {} classes and took {} ms", injectables.size(), ((System.currentTimeMillis() - initializationTime)));
         injectables
@@ -220,7 +200,7 @@ public abstract class AbstractPluginContext implements PluginContext {
                 .getBeanDefinitions()
                 .stream()
                 .filter(b -> !b.isValid(getBeanFactory()))
-                .collect(Collectors.toList());
+                .toList();
         for (val b : invalidBeans) {
             getBeanDefinitionRegistry().unregisterBeanDefinition(b.getId());
         }
@@ -232,25 +212,47 @@ public abstract class AbstractPluginContext implements PluginContext {
         log.info("Loading context {} with '{}' active profiles", getId(), join);
     }
 
-    private void constructPhase(Predicate<PluginBeanDefinition> phaseFilter, Predicate<PluginBeanDefinition> filter, String phaseName) {
+    private void phase(Predicate<PluginBeanDefinition> phaseFilter, Predicate<PluginBeanDefinition> filter, boolean eagerInit, Consumer<PluginBeanDefinition> phase) {
         getBeanDefinitionRegistry()
                 .getBeanDefinitions()
                 .stream()
-                .filter(b -> !b.isInitialized())
+                .filter(b -> (eagerInit && !b.isInitialized()))
                 .sorted(Comparator.comparingInt(PluginBeanDefinition::getOrder))
                 .filter(pluginBeanDefinition -> !pluginBeanDefinition.isDeferred())
                 .filter(phaseFilter)
                 .filter(filter)
-                .forEach(definition -> definition.construct(getBeanFactory()));
-    }
-
-    private void fireContextEvent(ContextEvent event) {
-        val publisher = getBeanFactory().getBean(EventPublisher.class);
-        publisher.publish(event, false, false);
+                .forEach(phase);
     }
 
     private void logStartupTime() {
         val startupTime = System.currentTimeMillis();
         log.info("Context started after {} ms", startupTime - getInitializationTime());
+    }
+
+    private void performInitializationChecks() {
+        if (getBeanDefinitionRegistry() == null) {
+            throw new ContextInitializationException("Can not start a context without a Bean definition registry.");
+        }
+        if (getBeanFactory() == null) {
+            throw new ContextInitializationException("Can not start a context without a Bean factory.");
+        }
+        if (getBeanNameStrategy() == null) {
+            throw new ContextInitializationException("Can not start a context without a Bean naming strategy.");
+        }
+        if (getClassLoader() == null) {
+            throw new ContextInitializationException("Can not start a context without a plugin classloader.");
+        }
+        if (this.getQuartzPlugin() == null) {
+            throw new ContextInitializationException("Can not start a context without a quartz plugin.");
+        }
+    }
+
+    private void registerDefaultBeans() {
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(URLClassLoader.class, getClassLoader());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(QuartzPlugin.class, this.getQuartzPlugin());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(getPluginClass(), this.getQuartzPlugin());
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(QuartzContext.class, this);
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(AbstractQuartzContext.class, this);
+        getBeanDefinitionRegistry().registerSingletonBeanDefinition(getClass(), this);
     }
 }

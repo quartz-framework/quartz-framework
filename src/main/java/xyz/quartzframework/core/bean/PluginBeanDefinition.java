@@ -4,18 +4,21 @@ import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
+import org.springframework.core.ResolvableType;
+import xyz.quartzframework.core.annotation.ContextLoads;
+import xyz.quartzframework.core.annotation.ContextStarts;
 import xyz.quartzframework.core.bean.factory.PluginBeanFactory;
 import xyz.quartzframework.core.condition.Evaluate;
 import xyz.quartzframework.core.condition.Evaluators;
 import xyz.quartzframework.core.condition.metadata.*;
+import xyz.quartzframework.core.task.RepeatedTask;
 import xyz.quartzframework.core.util.InjectionUtil;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Slf4j
 @Getter
@@ -81,17 +84,15 @@ public class PluginBeanDefinition extends GenericBeanDefinition implements BeanD
     @Setter
     private Class<?> literalType;
 
-    @Builder.Default
-    private List<Method> postConstructMethods = new ArrayList<>();
+    @Getter
+    @Setter
+    private ResolvableType resolvableType;
 
     @Builder.Default
-    private List<Method> preDestroyMethods = new ArrayList<>();
+    private Map<Class<? extends Annotation>, List<Method>> lifecycleMethods = new HashMap<>();
 
     @Builder.Default
     private List<Method> listenMethods = new ArrayList<>();
-
-    @Builder.Default
-    private List<Method> repeatedTasksMethods = new ArrayList<>();
 
     private GenericConditionMetadata genericConditionMetadata;
 
@@ -119,6 +120,14 @@ public class PluginBeanDefinition extends GenericBeanDefinition implements BeanD
         setInstance(null);
     }
 
+    public void triggerLoadMethods(PluginBeanFactory pluginBeanFactory) {
+        getContextLoadsMethods().forEach(method -> InjectionUtil.newInstance(pluginBeanFactory, method));
+    }
+
+    public void triggerStartMethods(PluginBeanFactory pluginBeanFactory) {
+        getContextStartsMethods().forEach(method -> InjectionUtil.newInstance(pluginBeanFactory, method));
+    }
+
     public void construct(PluginBeanFactory pluginBeanFactory) {
         if (isInitialized() && isSingleton()) {
             return;
@@ -138,7 +147,7 @@ public class PluginBeanDefinition extends GenericBeanDefinition implements BeanD
                 .filter(d -> d.getLiteralType().equals(this.literalType))
                 .filter(d -> !d.isInjected())
                 .sorted(Comparator.comparingInt(PluginBeanDefinition::getOrder))
-                .collect(Collectors.toList());
+                .toList();
         for (PluginBeanDefinition methodBean : methodBeans) {
             methodBean.construct(pluginBeanFactory);
         }
@@ -187,5 +196,25 @@ public class PluginBeanDefinition extends GenericBeanDefinition implements BeanD
 
     public boolean isValid(PluginBeanFactory factory) {
         return Evaluate.getEvaluators().values().stream().allMatch(eval -> eval.evaluate(this, factory));
+    }
+
+    public List<Method> getPostConstructMethods() {
+        return getLifecycleMethods().getOrDefault(PostConstruct.class, Collections.emptyList());
+    }
+
+    public List<Method> getPreDestroyMethods() {
+        return getLifecycleMethods().getOrDefault(PreDestroy.class, Collections.emptyList());
+    }
+
+    public List<Method> getContextLoadsMethods() {
+        return getLifecycleMethods().getOrDefault(ContextLoads.class, Collections.emptyList());
+    }
+
+    public List<Method> getContextStartsMethods() {
+        return getLifecycleMethods().getOrDefault(ContextStarts.class, Collections.emptyList());
+    }
+
+    public List<Method> getRepeatedTasksMethods() {
+        return getLifecycleMethods().getOrDefault(RepeatedTask.class, Collections.emptyList());
     }
 }

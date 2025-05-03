@@ -1,6 +1,6 @@
 package xyz.quartzframework.core.property;
 
-import org.bukkit.configuration.ConfigurationSection;
+import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 
 public interface PropertySource extends ConfigurationSection {
 

@@ -2,7 +2,7 @@ package xyz.quartzframework.core.condition;
 
 import lombok.experimental.UtilityClass;
 import lombok.val;
-import org.bukkit.plugin.Plugin;
+import xyz.quartzframework.core.QuartzPlugin;
 import xyz.quartzframework.core.bean.factory.PluginBeanFactory;
 import xyz.quartzframework.core.property.PropertyPostProcessor;
 import xyz.quartzframework.core.util.ClassUtil;
@@ -90,7 +90,7 @@ public final class Evaluators {
 
     public Function<PluginBeanFactory, List<String>> getActiveProfiles() {
         return factory -> ACTIVE_PROFILES_CACHE.computeIfAbsent(factory, f -> {
-            val plugin = f.getBean(Plugin.class);
+            val plugin = f.getBean(QuartzPlugin.class);
             val env = f.getBean(PropertyPostProcessor.class);
             val profileInVariables = env
                     .getEnvironmentVariables()

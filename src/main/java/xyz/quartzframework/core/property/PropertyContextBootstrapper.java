@@ -1,7 +1,7 @@
 package xyz.quartzframework.core.property;
 
-import org.bukkit.plugin.Plugin;
 import org.springframework.core.convert.ConversionService;
+import xyz.quartzframework.core.QuartzPlugin;
 import xyz.quartzframework.core.annotation.ContextBootstrapper;
 import xyz.quartzframework.core.annotation.NoProxy;
 import xyz.quartzframework.core.annotation.Provide;
@@ -13,7 +13,7 @@ public class PropertyContextBootstrapper {
 
     @Provide
     @ActivateWhenBeanMissing(PropertySourceFactory.class)
-    PropertySourceFactory propertySourceFactory(Plugin plugin) {
+    PropertySourceFactory propertySourceFactory(QuartzPlugin<?> plugin) {
         return new DefaultPropertySourceFactory(plugin);
     }
 

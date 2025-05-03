@@ -1,18 +1,14 @@
 package xyz.quartzframework.core.listener;
 
-import org.bukkit.event.Listener;
-import org.bukkit.plugin.Plugin;
 import xyz.quartzframework.core.annotation.NoProxy;
 
 @NoProxy
-public interface ListenerFactory {
+public interface ListenerFactory<T, E> {
 
-    Plugin getPlugin();
-
-    PluginEventExecutor getExecutor();
+    PluginEventExecutor<T, E> getExecutor();
 
     void registerEvents(Object bean);
 
-    void unregisterEvents(Listener listener);
+    void unregisterEvents(Object listener);
 
 }

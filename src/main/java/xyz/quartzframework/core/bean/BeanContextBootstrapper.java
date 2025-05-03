@@ -4,11 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import xyz.quartzframework.core.annotation.ContextBootstrapper;
-import xyz.quartzframework.core.annotation.Listen;
+import xyz.quartzframework.core.annotation.ContextLoads;
 import xyz.quartzframework.core.annotation.NoProxy;
 import xyz.quartzframework.core.bean.registry.PluginBeanDefinitionRegistry;
-import xyz.quartzframework.core.context.AbstractPluginContext;
-import xyz.quartzframework.core.event.ContextLoadedEvent;
+import xyz.quartzframework.core.context.AbstractQuartzContext;
 
 @NoProxy
 @Slf4j
@@ -16,17 +15,13 @@ import xyz.quartzframework.core.event.ContextLoadedEvent;
 @ContextBootstrapper
 public class BeanContextBootstrapper {
 
-    private final AbstractPluginContext pluginContext;
+    private final AbstractQuartzContext<?> pluginContext;
 
     private final PluginBeanDefinitionRegistry pluginBeanDefinitionRegistry;
 
-    @Listen
-    public void onLoad(ContextLoadedEvent event) {
-        val context = event.getContext();
-        if (!context.getId().equals(pluginContext.getId())) {
-            return;
-        }
-        val beanFactory = context.getBeanFactory();
+    @ContextLoads
+    public void onLoad() {
+        val beanFactory = pluginContext.getBeanFactory();
         pluginBeanDefinitionRegistry
                 .getBeanDefinitions()
                 .stream()
