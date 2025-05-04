@@ -25,4 +25,4 @@ jobs:
           server-password: ${{ secrets.OSSRH_PASSWORD }}
 
       - name: Build and deploy to Maven Central
-        run: mvn clean deploy -P release --batch-mode --no-transfer-progress
+        run: mvn -s .mvn/settings.xml --batch-mode clean deploy -P release
