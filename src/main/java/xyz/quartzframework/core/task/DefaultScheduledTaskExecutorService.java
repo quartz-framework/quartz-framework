@@ -5,7 +5,6 @@ import com.cronutils.model.CronType;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.model.time.ExecutionTime;
 import com.cronutils.parser.CronParser;
-import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 import java.time.ZoneId;
@@ -13,7 +12,6 @@ import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.concurrent.*;
 
-@Slf4j
 public class DefaultScheduledTaskExecutorService implements ScheduledTaskExecutorService {
 
     private final CronParser cronParser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.SPRING));

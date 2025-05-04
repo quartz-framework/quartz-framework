@@ -2,6 +2,7 @@ package xyz.quartzframework.core.property;
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
 import xyz.quartzframework.core.QuartzPlugin;
@@ -10,6 +11,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RequiredArgsConstructor
 public class DefaultPropertySourceFactory implements PropertySourceFactory {
 
@@ -24,9 +26,18 @@ public class DefaultPropertySourceFactory implements PropertySourceFactory {
 
     @SneakyThrows
     private PropertySource loadConfiguration(String name) {
-        val configFile = new File(plugin.getDataFolder(), String.format("%s.yml", name));
+        val fileName = String.format("%s.yml", name);
+        val configFile = new File(plugin.getDataFolder(), fileName);
         if (!configFile.exists()) {
-            plugin.saveResource(String.format("%s.yml", name), false);
+            val internal = plugin.getClass().getClassLoader().getResource(fileName);
+            if (internal != null) {
+                plugin.saveResource(fileName, false);
+            } else {
+                configFile.getParentFile().mkdirs();
+                if (configFile.createNewFile()) {
+                    log.info("Created fallback {} configuration file", fileName);
+                }
+            }
         }
         val yamlConfiguration = YamlConfiguration.loadConfiguration(configFile);
         return new PropertySourceFile(yamlConfiguration, configFile);

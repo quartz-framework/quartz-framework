@@ -1,6 +1,6 @@
 package xyz.quartzframework.core.condition.annotation;
 
-import xyz.quartzframework.core.annotation.Property;
+import xyz.quartzframework.core.property.Property;
 
 import java.lang.annotation.*;
 

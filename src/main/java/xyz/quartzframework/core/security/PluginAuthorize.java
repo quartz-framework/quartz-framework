@@ -8,10 +8,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Determine a business logic to filter the method calls (or all methods inside class) based in the {@link org.bukkit.command.CommandSender CommandSender}
- * of the current context. This automatically requires the presence of a {@link org.bukkit.command.CommandSender CommandSender}.
- */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface PluginAuthorize {

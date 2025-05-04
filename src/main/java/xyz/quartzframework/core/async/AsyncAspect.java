@@ -22,7 +22,6 @@ public class AsyncAspect {
     
     @Around("@annotation(async)")
     public Object handleAsync(final ProceedingJoinPoint pjp, Async async) {
-        log.info("Handling async aspect");
         val executor = async.executorName();
         val method = ((MethodSignature) pjp.getSignature()).getMethod();
         val returnType = method.getReturnType();

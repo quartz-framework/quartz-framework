@@ -1,4 +1,4 @@
-package xyz.quartzframework.core.annotation;
+package xyz.quartzframework.core.bean.annotation.scope;
 
 import java.lang.annotation.*;
 

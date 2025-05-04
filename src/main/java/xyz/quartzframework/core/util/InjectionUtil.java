@@ -2,25 +2,25 @@ package xyz.quartzframework.core.util;
 
 import lombok.SneakyThrows;
 import lombok.experimental.UtilityClass;
-import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.pacesys.reflect.Reflect;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ResolvableType;
-import xyz.quartzframework.core.annotation.Inject;
-import xyz.quartzframework.core.annotation.Property;
 import xyz.quartzframework.core.bean.BeanProvider;
+import xyz.quartzframework.core.bean.annotation.Inject;
 import xyz.quartzframework.core.bean.factory.PluginBeanFactory;
+import xyz.quartzframework.core.property.Property;
 import xyz.quartzframework.core.property.PropertyPostProcessor;
+import xyz.quartzframework.core.property.PropertySupplier;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.function.Supplier;
 
-@Slf4j
 @UtilityClass
 public class InjectionUtil {
 
@@ -45,31 +45,24 @@ public class InjectionUtil {
             val type = parameter.getType();
             val value = parameter.getAnnotation(Property.class);
             if (value != null) {
-                val environmentPostProcessor = pluginBeanFactory.getBean(PropertyPostProcessor.class);
-                val targetValue = environmentPostProcessor.process(value.value(), value.source(), type);
-                constructorParameterInstances[i] = targetValue;
+                constructorParameterInstances[i] = resolveProperty(pluginBeanFactory, parameter.getParameterizedType(), value);
             } else {
                 Object obj;
                 val beanProviderInstance = resolveBeanProviderDependency(pluginBeanFactory, parameter.getParameterizedType());
                 if (beanProviderInstance != null) {
                     obj = beanProviderInstance;
                 } else {
-                    val optionalInstance = resolveOptionalDependency(pluginBeanFactory, parameter.getParameterizedType());
-                    if (optionalInstance != null) {
-                        obj = optionalInstance;
+                    val collectionInstance = resolveCollectionDependency(pluginBeanFactory, type, parameter.getParameterizedType());
+                    if (collectionInstance != null) {
+                        obj = collectionInstance;
                     } else {
-                        val collectionInstance = resolveCollectionDependency(pluginBeanFactory, type, parameter.getParameterizedType());
-                        if (collectionInstance != null) {
-                            obj = collectionInstance;
+                        val namedInstance = BeanUtil.getNamedInstance(parameter);
+                        if (namedInstance != null && !namedInstance.isEmpty() && pluginBeanFactory.containsBean(namedInstance)) {
+                            obj = pluginBeanFactory.getBean(namedInstance, type);
+                        } else if (pluginBeanFactory.containsBean(parameter.getName())) {
+                            obj = pluginBeanFactory.getBean(parameter.getName(), type);
                         } else {
-                            val namedInstance = BeanUtil.getNamedInstance(parameter);
-                            if (namedInstance != null && !namedInstance.isEmpty() && pluginBeanFactory.containsBean(namedInstance)) {
-                                obj = pluginBeanFactory.getBean(namedInstance, type);
-                            } else if (pluginBeanFactory.containsBean(parameter.getName())) {
-                                obj = pluginBeanFactory.getBean(parameter.getName(), type);
-                            } else {
-                                obj = pluginBeanFactory.getBean(type);
-                            }
+                            obj = pluginBeanFactory.getBean(type);
                         }
                     }
                 }
@@ -90,31 +83,24 @@ public class InjectionUtil {
             val type = parameter.getType();
             val value = parameter.getAnnotation(Property.class);
             if (value != null) {
-                val environmentPostProcessor = pluginBeanFactory.getBean(PropertyPostProcessor.class);
-                val targetValue = environmentPostProcessor.process(value.value(), value.source(), type);
-                parameterInstances[i] = targetValue;
+                parameterInstances[i] = resolveProperty(pluginBeanFactory, parameter.getParameterizedType(), value);
             } else {
                 Object obj;
                 val beanProviderInstance = resolveBeanProviderDependency(pluginBeanFactory, parameter.getParameterizedType());
                 if (beanProviderInstance != null) {
                     obj = beanProviderInstance;
                 } else {
-                    val optionalInstance = resolveOptionalDependency(pluginBeanFactory, parameter.getParameterizedType());
-                    if (optionalInstance != null) {
-                        obj = optionalInstance;
+                    val collectionInstance = resolveCollectionDependency(pluginBeanFactory, type, parameter.getParameterizedType());
+                    if (collectionInstance != null) {
+                        obj = collectionInstance;
                     } else {
-                        val collectionInstance = resolveCollectionDependency(pluginBeanFactory, type, parameter.getParameterizedType());
-                        if (collectionInstance != null) {
-                            obj = collectionInstance;
+                        val namedInstance = BeanUtil.getNamedInstance(parameter);
+                        if (namedInstance != null && !namedInstance.isEmpty() && pluginBeanFactory.containsBean(namedInstance)) {
+                            obj = pluginBeanFactory.getBean(namedInstance, type);
+                        } else if (pluginBeanFactory.containsBean(parameter.getName())) {
+                            obj = pluginBeanFactory.getBean(parameter.getName(), type);
                         } else {
-                            val namedInstance = BeanUtil.getNamedInstance(parameter);
-                            if (namedInstance != null && !namedInstance.isEmpty() && pluginBeanFactory.containsBean(namedInstance)) {
-                                obj = pluginBeanFactory.getBean(namedInstance, type);
-                            } else if (pluginBeanFactory.containsBean(parameter.getName())) {
-                                obj = pluginBeanFactory.getBean(parameter.getName(), type);
-                            } else {
-                                obj = pluginBeanFactory.getBean(type);
-                            }
+                            obj = pluginBeanFactory.getBean(type);
                         }
                     }
                 }
@@ -142,29 +128,23 @@ public class InjectionUtil {
             val type = field.getType();
             val value = field.getAnnotation(Property.class);
             if (value != null) {
-                val environmentPostProcessor = pluginBeanFactory.getBean(PropertyPostProcessor.class);
-                instance = environmentPostProcessor.process(value.value(), value.source(), type);
+                instance = resolveProperty(pluginBeanFactory, field.getGenericType(), value);
             } else {
                 val beanProviderInstance = resolveBeanProviderDependency(pluginBeanFactory, field.getGenericType());
                 if (beanProviderInstance != null) {
                     instance = beanProviderInstance;
                 } else {
-                    val optionalInstance = resolveOptionalDependency(pluginBeanFactory, field.getGenericType());
-                    if (optionalInstance != null) {
-                        instance = optionalInstance;
+                    val collectionInstance = resolveCollectionDependency(pluginBeanFactory, type, field.getGenericType());
+                    if (collectionInstance != null) {
+                        instance = collectionInstance;
                     } else {
-                        val collectionInstance = resolveCollectionDependency(pluginBeanFactory, type, field.getGenericType());
-                        if (collectionInstance != null) {
-                            instance = collectionInstance;
+                        val namedInstance = BeanUtil.getNamedInstance(field);
+                        if (namedInstance != null && !namedInstance.isEmpty() && pluginBeanFactory.containsBean(namedInstance)) {
+                            instance = pluginBeanFactory.getBean(namedInstance, type);
+                        } else if (pluginBeanFactory.containsBean(field.getName())) {
+                            instance = pluginBeanFactory.getBean(field.getName(), type);
                         } else {
-                            val namedInstance = BeanUtil.getNamedInstance(field);
-                            if (namedInstance != null && !namedInstance.isEmpty() && pluginBeanFactory.containsBean(namedInstance)) {
-                                instance = pluginBeanFactory.getBean(namedInstance, type);
-                            } else if (pluginBeanFactory.containsBean(field.getName())) {
-                                instance = pluginBeanFactory.getBean(field.getName(), type);
-                            } else {
-                                instance = pluginBeanFactory.getBean(type);
-                            }
+                            instance = pluginBeanFactory.getBean(type);
                         }
                     }
                 }
@@ -214,23 +194,6 @@ public class InjectionUtil {
     }
 
     @SneakyThrows
-    private Object resolveOptionalDependency(PluginBeanFactory factory, Type genericType) {
-        val resolvedType = ResolvableType.forType(genericType);
-        val rawClass = resolvedType.resolve();
-        if (rawClass == null || !Optional.class.isAssignableFrom(rawClass)) return null;
-
-        val elementType = resolvedType.as(Optional.class).getGeneric(0).resolve();
-        if (elementType == null) return Optional.empty();
-
-        try {
-            val bean = factory.getBean(elementType);
-            return Optional.of(bean);
-        } catch (Exception ex) {
-            return Optional.empty();
-        }
-    }
-
-    @SneakyThrows
     private Object resolveBeanProviderDependency(PluginBeanFactory factory, Type genericType) {
         val resolvedType = ResolvableType.forType(genericType);
         val rawClass = resolvedType.resolve();
@@ -238,5 +201,21 @@ public class InjectionUtil {
         val elementType = resolvedType.as(BeanProvider.class).getGeneric(0).resolve();
         if (elementType == null) return null;
         return new BeanProvider<>(factory, elementType);
+    }
+
+    @SneakyThrows
+    private Object resolveProperty(PluginBeanFactory factory, Type genericType, Property annotation) {
+        val postProcessor = factory.getBean(PropertyPostProcessor.class);
+        val type = ResolvableType.forType(genericType);
+        val rawClass = type.resolve();
+
+        if (rawClass != null && Supplier.class.isAssignableFrom(rawClass)) {
+            val generic = type.as(Supplier.class).getGeneric(0).resolve();
+            if (generic == null) {
+                throw new IllegalArgumentException("Could not resolve Supplier<T> generic type for property: " + annotation.value());
+            }
+            return new PropertySupplier<>(postProcessor, annotation.source(), annotation.value(), generic);
+        }
+        return postProcessor.process(annotation.value(), annotation.source(), rawClass);
     }
 }

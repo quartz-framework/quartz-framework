@@ -1,12 +1,12 @@
-package xyz.quartzframework.core.annotation;
+package xyz.quartzframework.core.context.annotation;
 
 import java.lang.annotation.*;
 
 @Documented
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Discover {
+public @interface External {
 
-    String[] basePackages();
+    Class<?>[] value();
 
 }

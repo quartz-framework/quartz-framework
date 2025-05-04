@@ -1,7 +1,7 @@
 package xyz.quartzframework.core;
 
 import lombok.val;
-import xyz.quartzframework.core.annotation.NoProxy;
+import xyz.quartzframework.core.bean.annotation.NoProxy;
 import xyz.quartzframework.core.context.AbstractQuartzContext;
 
 import java.io.File;

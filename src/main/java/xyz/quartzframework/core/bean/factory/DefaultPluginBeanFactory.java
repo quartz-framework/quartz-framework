@@ -3,7 +3,6 @@ package xyz.quartzframework.core.bean.factory;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.pacesys.reflect.Reflect;
 import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
@@ -11,10 +10,10 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.core.ResolvableType;
 import org.springframework.lang.NonNull;
-import xyz.quartzframework.core.annotation.NoProxy;
-import xyz.quartzframework.core.annotation.Provide;
 import xyz.quartzframework.core.bean.BeanProvider;
 import xyz.quartzframework.core.bean.PluginBeanDefinition;
+import xyz.quartzframework.core.bean.annotation.NoProxy;
+import xyz.quartzframework.core.bean.annotation.Provide;
 import xyz.quartzframework.core.bean.registry.PluginBeanDefinitionRegistry;
 import xyz.quartzframework.core.bean.strategy.BeanNameStrategy;
 import xyz.quartzframework.core.exception.BeanCreationException;
@@ -28,7 +27,6 @@ import java.net.URLClassLoader;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Slf4j
 @NoProxy
 @RequiredArgsConstructor
 public class DefaultPluginBeanFactory implements PluginBeanFactory {

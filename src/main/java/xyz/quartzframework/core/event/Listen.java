@@ -1,4 +1,4 @@
-package xyz.quartzframework.core.annotation;
+package xyz.quartzframework.core.event;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -8,10 +8,6 @@ import java.lang.annotation.*;
 @Documented
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Provide {
-
-    String[] postConstructMethods() default {};
-
-    String[] preDestroyMethods() default {};
+public @interface Listen {
 
 }

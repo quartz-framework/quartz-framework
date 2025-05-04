@@ -1,16 +1,14 @@
 package xyz.quartzframework.core.bean;
 
 import lombok.*;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.core.ResolvableType;
-import xyz.quartzframework.core.annotation.ContextLoads;
-import xyz.quartzframework.core.annotation.ContextStarts;
 import xyz.quartzframework.core.bean.factory.PluginBeanFactory;
 import xyz.quartzframework.core.condition.Evaluate;
 import xyz.quartzframework.core.condition.Evaluators;
 import xyz.quartzframework.core.condition.metadata.*;
+import xyz.quartzframework.core.context.annotation.ContextLoads;
 import xyz.quartzframework.core.task.RepeatedTask;
 import xyz.quartzframework.core.util.InjectionUtil;
 
@@ -20,7 +18,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.*;
 
-@Slf4j
 @Getter
 @Builder
 @ToString
@@ -55,6 +52,9 @@ public class PluginBeanDefinition extends GenericBeanDefinition implements BeanD
 
     @Setter
     private boolean preferred;
+
+    @Setter
+    private boolean secondary;
 
     @Setter
     private boolean deferred;
@@ -118,10 +118,6 @@ public class PluginBeanDefinition extends GenericBeanDefinition implements BeanD
         getPreDestroyMethods().clear();
         getPostConstructMethods().clear();
         setInstance(null);
-    }
-
-    public void triggerLoadMethods(PluginBeanFactory pluginBeanFactory) {
-        getContextLoadsMethods().forEach(method -> InjectionUtil.newInstance(pluginBeanFactory, method));
     }
 
     public void triggerStartMethods(PluginBeanFactory pluginBeanFactory) {
@@ -194,6 +190,16 @@ public class PluginBeanDefinition extends GenericBeanDefinition implements BeanD
         setPreferred(primary);
     }
 
+    @Override
+    public void setFallback(boolean fallback) {
+        setSecondary(fallback);
+    }
+
+    @Override
+    public boolean isFallback() {
+        return isSecondary();
+    }
+
     public boolean isValid(PluginBeanFactory factory) {
         return Evaluate.getEvaluators().values().stream().allMatch(eval -> eval.evaluate(this, factory));
     }
@@ -206,12 +212,8 @@ public class PluginBeanDefinition extends GenericBeanDefinition implements BeanD
         return getLifecycleMethods().getOrDefault(PreDestroy.class, Collections.emptyList());
     }
 
-    public List<Method> getContextLoadsMethods() {
-        return getLifecycleMethods().getOrDefault(ContextLoads.class, Collections.emptyList());
-    }
-
     public List<Method> getContextStartsMethods() {
-        return getLifecycleMethods().getOrDefault(ContextStarts.class, Collections.emptyList());
+        return getLifecycleMethods().getOrDefault(ContextLoads.class, Collections.emptyList());
     }
 
     public List<Method> getRepeatedTasksMethods() {

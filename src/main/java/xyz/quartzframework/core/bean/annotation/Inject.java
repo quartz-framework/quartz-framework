@@ -1,4 +1,4 @@
-package xyz.quartzframework.core.annotation;
+package xyz.quartzframework.core.bean.annotation;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -6,8 +6,8 @@ import java.lang.annotation.*;
 
 @Autowired
 @Documented
-@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ContextStarts {
+@Target({ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.METHOD})
+public @interface Inject {
 
 }

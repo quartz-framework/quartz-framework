@@ -1,4 +1,4 @@
-package xyz.quartzframework.core.annotation;
+package xyz.quartzframework.core.context.annotation;
 
 import org.springframework.beans.factory.annotation.Autowired;
 

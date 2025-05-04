@@ -2,8 +2,8 @@ package xyz.quartzframework.core.command.picocli;
 
 import lombok.RequiredArgsConstructor;
 import picocli.CommandLine;
-import xyz.quartzframework.core.annotation.Injectable;
-import xyz.quartzframework.core.annotation.NoProxy;
+import xyz.quartzframework.core.bean.annotation.Injectable;
+import xyz.quartzframework.core.bean.annotation.NoProxy;
 import xyz.quartzframework.core.bean.factory.PluginBeanFactory;
 
 @NoProxy

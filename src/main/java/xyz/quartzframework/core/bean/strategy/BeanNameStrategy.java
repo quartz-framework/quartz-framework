@@ -1,6 +1,6 @@
 package xyz.quartzframework.core.bean.strategy;
 
-import xyz.quartzframework.core.annotation.NoProxy;
+import xyz.quartzframework.core.bean.annotation.NoProxy;
 
 import java.lang.reflect.Method;
 

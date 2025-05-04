@@ -3,12 +3,12 @@ package xyz.quartzframework.core.task;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import xyz.quartzframework.core.annotation.ContextBootstrapper;
-import xyz.quartzframework.core.annotation.ContextStarts;
-import xyz.quartzframework.core.annotation.NoProxy;
+import xyz.quartzframework.core.bean.annotation.NoProxy;
 import xyz.quartzframework.core.bean.factory.PluginBeanFactory;
 import xyz.quartzframework.core.condition.annotation.ActivateWhenAnnotationPresent;
 import xyz.quartzframework.core.context.QuartzContext;
+import xyz.quartzframework.core.context.annotation.ContextBootstrapper;
+import xyz.quartzframework.core.context.annotation.ContextLoads;
 import xyz.quartzframework.core.util.InjectionUtil;
 
 import javax.annotation.PreDestroy;
@@ -30,8 +30,8 @@ public class TaskInitializationContextBootstrapper {
         taskFactory.shutdownAll();
     }
 
-    @ContextStarts
-    public void onStart() {
+    @ContextLoads
+    public void onContextLoad() {
         val context = pluginBeanFactory.getBean(QuartzContext.class);
         val beanDefinitionRegistry = context.getBeanDefinitionRegistry();
         val beanFactory = context.getBeanFactory();

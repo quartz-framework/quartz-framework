@@ -1,4 +1,6 @@
-package xyz.quartzframework.core.annotation;
+package xyz.quartzframework.core.context.annotation;
+
+import xyz.quartzframework.core.bean.annotation.Injectable;
 
 import java.lang.annotation.*;
 

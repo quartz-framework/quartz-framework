@@ -25,6 +25,7 @@ public class DefaultPropertyPostProcessor implements PropertyPostProcessor {
         val key = matcher.group(1);
         val fallback = matcher.group(2);
         val propertySource = propertySourceFactory.get(source);
+        propertySource.reload();
         val sourceValue = propertySource.getString(key);
         if (sourceValue != null) {
             val isEnv = ENV_VAR_PATTERN.matcher(sourceValue).matches();
@@ -36,6 +37,10 @@ public class DefaultPropertyPostProcessor implements PropertyPostProcessor {
         val environmentVariableValue = getEnvironmentVariables().get(key);
         if (environmentVariableValue != null) {
             return conversionService.convert(environmentVariableValue, type);
+        }
+        val systemPropertyValue = System.getProperty(key);
+        if (systemPropertyValue != null) {
+            return conversionService.convert(systemPropertyValue, type);
         }
         if (fallback != null) {
             return conversionService.convert(fallback, type);

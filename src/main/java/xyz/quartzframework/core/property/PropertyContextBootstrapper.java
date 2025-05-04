@@ -2,10 +2,10 @@ package xyz.quartzframework.core.property;
 
 import org.springframework.core.convert.ConversionService;
 import xyz.quartzframework.core.QuartzPlugin;
-import xyz.quartzframework.core.annotation.ContextBootstrapper;
-import xyz.quartzframework.core.annotation.NoProxy;
-import xyz.quartzframework.core.annotation.Provide;
+import xyz.quartzframework.core.bean.annotation.NoProxy;
+import xyz.quartzframework.core.bean.annotation.Provide;
 import xyz.quartzframework.core.condition.annotation.ActivateWhenBeanMissing;
+import xyz.quartzframework.core.context.annotation.ContextBootstrapper;
 
 @NoProxy
 @ContextBootstrapper

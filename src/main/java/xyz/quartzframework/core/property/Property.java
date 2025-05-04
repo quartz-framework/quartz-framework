@@ -1,4 +1,4 @@
-package xyz.quartzframework.core.annotation;
+package xyz.quartzframework.core.property;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.AliasFor;
@@ -14,5 +14,7 @@ public @interface Property {
     String value();
 
     String source() default "application";
+
+    boolean forceWrite() default false;
 
 }

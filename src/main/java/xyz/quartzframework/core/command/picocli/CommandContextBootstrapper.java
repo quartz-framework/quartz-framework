@@ -1,14 +1,14 @@
 package xyz.quartzframework.core.command.picocli;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.core.annotation.AnnotationUtils;
 import picocli.CommandLine;
-import xyz.quartzframework.core.annotation.*;
+import xyz.quartzframework.core.bean.annotation.*;
 import xyz.quartzframework.core.bean.factory.PluginBeanFactory;
-import xyz.quartzframework.core.command.*;
+import xyz.quartzframework.core.command.SubCommand;
 import xyz.quartzframework.core.common.Pair;
+import xyz.quartzframework.core.context.annotation.ContextBootstrapper;
 import xyz.quartzframework.core.util.InjectionUtil;
 
 import java.util.ArrayList;
@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@Slf4j
 @NoProxy
 @ContextBootstrapper
 @RequiredArgsConstructor(onConstructor = @__(@Inject))

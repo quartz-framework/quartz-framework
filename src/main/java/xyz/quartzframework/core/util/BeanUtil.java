@@ -6,8 +6,12 @@ import org.aspectj.lang.annotation.Aspect;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.annotation.Order;
-import xyz.quartzframework.core.annotation.*;
+import xyz.quartzframework.core.bean.annotation.*;
+import xyz.quartzframework.core.bean.annotation.scope.Prototype;
+import xyz.quartzframework.core.bean.annotation.scope.Singleton;
 import xyz.quartzframework.core.condition.Evaluators;
+import xyz.quartzframework.core.condition.annotation.Environment;
+import xyz.quartzframework.core.context.annotation.*;
 
 import javax.annotation.ManagedBean;
 import java.lang.annotation.Annotation;
@@ -56,6 +60,10 @@ public class BeanUtil {
 
     public boolean isPreferred(AnnotatedElement annotatedElement) {
         return annotatedElement.isAnnotationPresent(Preferred.class);
+    }
+
+    public boolean isSecondary(AnnotatedElement annotatedElement) {
+        return annotatedElement.isAnnotationPresent(Secondary.class);
     }
 
     public boolean isDeferred(AnnotatedElement annotatedElement) {

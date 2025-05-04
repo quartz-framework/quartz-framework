@@ -1,7 +1,6 @@
 package xyz.quartzframework.core.command.picocli;
 
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine;
 import picocli.CommandLine.IHelpSectionRenderer;
 import xyz.quartzframework.core.bean.factory.PluginBeanFactory;
@@ -12,7 +11,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Getter
 public class CommandLineDefinition {
 

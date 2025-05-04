@@ -1,4 +1,4 @@
-package xyz.quartzframework.core.annotation;
+package xyz.quartzframework.core.condition.annotation;
 
 import xyz.quartzframework.core.condition.Evaluators;
 

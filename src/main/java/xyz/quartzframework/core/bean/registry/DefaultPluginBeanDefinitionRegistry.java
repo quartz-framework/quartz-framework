@@ -5,11 +5,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.pacesys.reflect.Reflect;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.core.ResolvableType;
-import xyz.quartzframework.core.annotation.*;
 import xyz.quartzframework.core.bean.PluginBeanDefinition;
+import xyz.quartzframework.core.bean.annotation.NoProxy;
+import xyz.quartzframework.core.bean.annotation.Provide;
 import xyz.quartzframework.core.bean.strategy.BeanNameStrategy;
 import xyz.quartzframework.core.condition.annotation.*;
 import xyz.quartzframework.core.condition.metadata.*;
+import xyz.quartzframework.core.context.annotation.ContextLoads;
+import xyz.quartzframework.core.event.Listen;
 import xyz.quartzframework.core.exception.BeanCreationException;
 import xyz.quartzframework.core.exception.BeanNotFoundException;
 import xyz.quartzframework.core.exception.LifecycleException;
@@ -25,8 +28,8 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-@NoProxy
 @Slf4j
+@NoProxy
 @Getter
 @AllArgsConstructor
 public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinitionRegistry {
@@ -35,14 +38,24 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
 
     private final Set<PluginBeanDefinition> beanDefinitions = new HashSet<>();
 
+    private static final Comparator<PluginBeanDefinition> PREFERRED_COMPARATOR = Comparator
+            .comparingInt((PluginBeanDefinition def) -> {
+                if (def.isPreferred()) return 0;
+                if (!def.isSecondary()) return 1;
+                return 2;
+            });
+
     @NonNull
     @Override
     public PluginBeanDefinition getBeanDefinition(@NonNull String beanName) {
-        return getBeanDefinitions()
+        val matches = getBeanDefinitions()
                 .stream()
                 .filter(b -> b.getName().equals(beanName))
-                .min((a, b) -> Boolean.compare(!a.isPreferred(), !b.isPreferred()))
-                .orElseThrow(() -> new BeanNotFoundException("No beans found for " + beanName));
+                .toList();
+        if (matches.isEmpty()) {
+            throw new BeanNotFoundException("No beans found for " + beanName);
+        }
+        return resolveUniqueDefinition(matches);
     }
 
     @Override
@@ -72,11 +85,14 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
 
     @Override
     public PluginBeanDefinition getBeanDefinition(Class<?> requiredType) {
-        return getBeanDefinitions()
+        val candidates = getBeanDefinitions()
                 .stream()
                 .filter(filterBeanDefinition(requiredType))
-                .min((a, b) -> Boolean.compare(!a.isPreferred(), !b.isPreferred()))
-                .orElseThrow(() -> new BeanNotFoundException("No beans found for " + requiredType.getSimpleName()));
+                .toList();
+        if (candidates.isEmpty()) {
+            throw new BeanNotFoundException("No beans found for " + requiredType.getSimpleName());
+        }
+        return resolveUniqueDefinition(candidates);
     }
 
     @Override
@@ -116,6 +132,7 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
                 .internalBean(true)
                 .name(beanName)
                 .preferred(BeanUtil.isPreferred(clazz))
+                .secondary(BeanUtil.isSecondary(clazz))
                 .deferred(BeanUtil.isDeferred(clazz))
                 .proxied(isProxy)
                 .aspect(isAspect)
@@ -158,6 +175,7 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
                     .builder()
                     .name(methodName)
                     .preferred(BeanUtil.isPreferred(method))
+                    .secondary(BeanUtil.isSecondary(method))
                     .deferred(BeanUtil.isDeferred(method))
                     .contextBootstrapper(false)
                     .configurer(false)
@@ -188,11 +206,12 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
 
     @SuppressWarnings("unchecked")
     private Map<Class<? extends Annotation>, List<Method>> mapLifecycleMethods(Class<?> clazz) {
-        Class<? extends Annotation>[] annotations = new Class[]{PostConstruct.class,
+        Class<? extends Annotation>[] annotations = new Class[]{
+                PostConstruct.class,
+                ContextLoads.class,
                 PreDestroy.class,
                 RepeatedTask.class,
-                ContextStarts.class,
-                ContextLoads.class};
+        };
         val methods = ReflectionUtil.getMethods(Reflect.MethodType.INSTANCE, clazz, annotations);
         val map = new HashMap<Class<? extends Annotation>, List<Method>>();
         for (val method : methods) {
@@ -261,6 +280,7 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
                 .builder()
                 .name(beanName)
                 .preferred(BeanUtil.isPreferred(clazz))
+                .secondary(BeanUtil.isSecondary(clazz))
                 .deferred(BeanUtil.isDeferred(clazz))
                 .proxied(BeanUtil.isProxy(clazz))
                 .environments(BeanUtil.getEnvironments(clazz))
@@ -287,7 +307,8 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
         return getBeanDefinitions()
                 .stream()
                 .filter(filterBeanDefinition(requiredType))
-                .collect(Collectors.toSet());
+                .sorted(PREFERRED_COMPARATOR)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     @Override
@@ -302,10 +323,14 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
 
     @Override
     public void registerBeanDefinition(@NonNull String beanName, @NonNull BeanDefinition beanDefinition) {
-        if (!(beanDefinition instanceof PluginBeanDefinition)) {
+        if (!(beanDefinition instanceof PluginBeanDefinition pluginBeanDefinition)) {
             throw new BeanCreationException("Unrecognized bean definition type: " + beanDefinition.getClass().getName());
         }
-        getBeanDefinitions().add((PluginBeanDefinition) beanDefinition);
+        if (pluginBeanDefinition.isPreferred() && pluginBeanDefinition.isSecondary()) {
+            log.warn("Bean '{}' is annotated as both @Preferred and @Secondary — ignoring @Secondary.", pluginBeanDefinition.getName());
+            pluginBeanDefinition.setSecondary(false);
+        }
+        getBeanDefinitions().add(pluginBeanDefinition);
     }
 
     @Override
@@ -331,5 +356,29 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
                     requiredType.isAssignableFrom(beanDefinition.getLiteralType())
                     || beanDefinition.getResolvableType().isAssignableFrom(requiredType);
         };
+    }
+
+    private PluginBeanDefinition resolveUniqueDefinition(List<PluginBeanDefinition> candidates) {
+        if (candidates.size() <= 1) return candidates.get(0);
+        val preferred = candidates.stream().filter(PluginBeanDefinition::isPreferred).toList();
+        if (preferred.size() > 1) {
+            log.warn("Multiple @Preferred beans found: {}", preferred.stream().map(PluginBeanDefinition::getName).toList());
+        }
+        if (!preferred.isEmpty()) return preferred.get(0);
+        val normal = candidates.stream()
+                .filter(d -> !d.isPreferred() && !d.isSecondary())
+                .toList();
+        val ambiguousNormals = normal.stream()
+                .filter(d -> !d.isNamedInstance())
+                .toList();
+        if (ambiguousNormals.size() > 1) {
+            log.warn("Multiple unnamed normal beans found (no @Preferred/@Secondary/@NamedInstance): '{}'", ambiguousNormals.stream().map(PluginBeanDefinition::getName).collect(Collectors.joining(", ")));
+        }
+        if (!normal.isEmpty()) return normal.get(0);
+        val secondary = candidates.stream().filter(PluginBeanDefinition::isSecondary).toList();
+        if (secondary.size() > 1) {
+            log.warn("Multiple @Secondary beans found: {}", secondary.stream().map(PluginBeanDefinition::getName).toList());
+        }
+        return secondary.get(0);
     }
 }

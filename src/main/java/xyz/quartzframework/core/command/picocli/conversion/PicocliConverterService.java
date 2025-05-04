@@ -5,8 +5,9 @@ import lombok.SneakyThrows;
 import lombok.val;
 import org.springframework.core.convert.ConversionService;
 import picocli.CommandLine;
-import xyz.quartzframework.core.annotation.Injectable;
-import xyz.quartzframework.core.annotation.NoProxy;
+import xyz.quartzframework.core.bean.annotation.Injectable;
+import xyz.quartzframework.core.bean.annotation.NoProxy;
+
 import java.util.Map;
 
 @NoProxy

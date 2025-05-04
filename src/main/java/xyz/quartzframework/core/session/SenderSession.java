@@ -3,7 +3,7 @@ package xyz.quartzframework.core.session;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.val;
-import xyz.quartzframework.core.annotation.NoProxy;
+import xyz.quartzframework.core.bean.annotation.NoProxy;
 
 import java.util.Map;
 import java.util.concurrent.Callable;

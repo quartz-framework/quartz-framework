@@ -1,6 +1,6 @@
 package xyz.quartzframework.core.listener;
 
-import xyz.quartzframework.core.annotation.NoProxy;
+import xyz.quartzframework.core.bean.annotation.NoProxy;
 
 @NoProxy
 public interface ListenerFactory<T, E> {

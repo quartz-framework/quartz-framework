@@ -1,9 +1,9 @@
 package xyz.quartzframework.core.async;
 
 import lombok.RequiredArgsConstructor;
-import xyz.quartzframework.core.annotation.ContextBootstrapper;
-import xyz.quartzframework.core.annotation.Inject;
-import xyz.quartzframework.core.annotation.NoProxy;
+import xyz.quartzframework.core.bean.annotation.Inject;
+import xyz.quartzframework.core.bean.annotation.NoProxy;
+import xyz.quartzframework.core.context.annotation.ContextBootstrapper;
 import xyz.quartzframework.core.task.ScheduledTaskExecutorService;
 import xyz.quartzframework.core.task.TaskFactory;
 

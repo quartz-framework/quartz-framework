@@ -1,11 +1,11 @@
 package xyz.quartzframework.core.context;
 
-import xyz.quartzframework.core.annotation.NoProxy;
-import xyz.quartzframework.core.annotation.PluginApplication;
+import xyz.quartzframework.core.QuartzApplication;
+import xyz.quartzframework.core.QuartzPlugin;
+import xyz.quartzframework.core.bean.annotation.NoProxy;
 import xyz.quartzframework.core.bean.factory.PluginBeanFactory;
 import xyz.quartzframework.core.bean.registry.PluginBeanDefinitionRegistry;
 import xyz.quartzframework.core.bean.strategy.BeanNameStrategy;
-import xyz.quartzframework.core.QuartzPlugin;
 
 import java.util.UUID;
 
@@ -19,12 +19,12 @@ public interface QuartzContext<T> {
     void close();
 
     default boolean isVerbose() {
-        return getPluginApplication().verbose();
+        return getQuartzApplication().verbose();
     }
 
     QuartzPlugin<T> getQuartzPlugin();
 
-    PluginApplication getPluginApplication();
+    QuartzApplication getQuartzApplication();
 
     PluginBeanFactory getBeanFactory();
 
