@@ -202,6 +202,8 @@
                         <arg>--pinentry-mode</arg>
                         <arg>loopback</arg>
                     </gpgArguments>
+                    <useAgent>false</useAgent>
+                    <passphraseServerId>gpg.passphrase</passphraseServerId>
                 </configuration>
             </plugin>
             <plugin>
