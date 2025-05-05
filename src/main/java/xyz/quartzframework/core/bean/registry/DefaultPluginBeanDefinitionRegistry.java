@@ -297,9 +297,12 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
                 .literalType(clazz)
                 .resolvableType(ResolvableType.forClass(clazz))
                 .instance(instance)
+                .listenMethods(mapListenMethods(clazz).getOrDefault(Listen.class, Collections.emptyList()))
+                .lifecycleMethods(mapLifecycleMethods(clazz))
                 .injected(true)
                 .build();
         registerBeanDefinition(definition.getName(), definition);
+        defineProvideMethods(clazz, definition.isProxied());
     }
 
     @Override
