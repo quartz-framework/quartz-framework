@@ -19,7 +19,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 17
-          server-id: ossrh
+          server-id: central
           server-username: ${{ secrets.OSSRH_USERNAME }}
           server-password: ${{ secrets.OSSRH_PASSWORD }}
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
@@ -27,8 +27,6 @@ jobs:
       - name: Set project version
         run: mvn versions:set "-DnewVersion=${{ github.event.inputs.releaseversion }}"
       - name: Build and deploy
-        env:
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           if [[ "${{ github.event.inputs.releaseversion }}" == *-SNAPSHOT ]]; then
             echo "Deploying SNAPSHOT version (no -P release)"
