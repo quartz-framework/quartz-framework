@@ -22,20 +22,22 @@
     <developers>
         <developer>
             <email>contact@quartzframework.xyz</email>
+            <organization>Quartz Framework</organization>
+            <organizationUrl>https://quartzframework.xyz</organizationUrl>
         </developer>
     </developers>
 
     <licenses>
         <license>
-            <name>MIT</name>
-            <url>https://github.com/quartz-framework/quartz-core/blob/main/LICENSE</url>
+            <name>MIT License</name>
+            <url>http://www.opensource.org/licenses/mit-license.php</url>
         </license>
     </licenses>
 
     <scm>
-        <connection>scm:git://github.com/quartz-framework/quartz-core.git</connection>
-        <developerConnection>scm:git://github.com/quartz-framework/quartz-core.git</developerConnection>
-        <url>git://github.com/quartz-framework/quartz-core.git</url>
+        <connection>scm:git:git://github.com/quartz-framework/quartz-core.git</connection>
+        <developerConnection>scm:git:ssh://github.com/quartz-framework/quartz-core.git</developerConnection>
+        <url>https://github.com/quartz-framework/quartz-core/tree/main</url>
     </scm>
 
     <dependencies>
@@ -171,13 +173,35 @@
                 <version>2.22.2</version>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                        <configuration>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <keyname>${env.MAVEN_GPG_PASSPHRASE}</keyname>
+                            <gpgArguments>
+                                <arg>--pinentry-mode</arg>
+                                <arg>loopback</arg>
+                            </gpgArguments>
+                            <useAgent>false</useAgent>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
                 <version>0.7.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central</publishingServerId>
-                    <autoPublish>true</autoPublish>
                 </configuration>
             </plugin>
         </plugins>
