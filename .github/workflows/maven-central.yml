@@ -24,7 +24,10 @@ jobs:
       - name: Set projects Maven version to GitHub Action GUI set version
         run: mvn versions:set "-DnewVersion=${{ github.event.inputs.releaseversion }}"
       - name: Publish package
-        run: mvn clean deploy -P release --batch-mode --no-transfer-progress
+        run: |
+          mkdir -p ~/.m2
+          echo "<settings><servers><server><id>gpg.passphrase</id><passphrase>${{ secrets.GPG_PASSPHRASE }}</passphrase></server></servers></settings>" > ~/.m2/settings.xml
+          mvn clean deploy -P release --batch-mode --no-transfer-progress
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
