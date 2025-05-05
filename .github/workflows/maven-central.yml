@@ -14,24 +14,18 @@ jobs:
     steps:
       - run: echo "Will start a Maven Central upload with version ${{ github.event.inputs.releaseversion }}"
       - uses: actions/checkout@v2
-      - name: Set up Java and Maven Central
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: 17
-          server-id: central
-          server-username: ${{ secrets.OSSRH_USERNAME }}
-          server-password: ${{ secrets.OSSRH_PASSWORD }}
-          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
-          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
       - name: Set project version
         run: mvn versions:set "-DnewVersion=${{ github.event.inputs.releaseversion }}"
       - name: Build and deploy
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           if [[ "${{ github.event.inputs.releaseversion }}" == *-SNAPSHOT ]]; then
-            echo "Deploying SNAPSHOT version (no -P release)"
-            mvn clean deploy --batch-mode --no-transfer-progress -DskipTests
+            echo "Deploying SNAPSHOT version"
+            mvn -s .mvn/.m2/settings.xml --batch-mode clean deploy --no-transfer-progress -DskipTests
           else
-            echo "Deploying RELEASE version (with -P release)"
-            mvn clean deploy -P release --batch-mode --no-transfer-progress -DskipTests
+            echo "Deploying RELEASE version"
+            mvn -s .mvn/.m2/settings.xml --batch-mode clean deploy -P release --no-transfer-progress -DskipTests
           fi
