@@ -1,33 +1,31 @@
-name: Deploy to Maven Central
-
-#on:
-#  release:
-#    types: [created]
-
+name: release-to-maven-central
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      releaseversion:
+        description: 'Release version'
+        required: true
+        default: '0.0.1'
 jobs:
   publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Java for publishing to Maven Central Repository
-        uses: actions/setup-java@v4
+      - run: echo "Will start a Maven Central upload with version ${{ github.event.inputs.releaseversion }}"
+      - uses: actions/checkout@v2
+      - name: Set up Maven Central Repository
+        uses: actions/setup-java@v1
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          java-version: 17
           server-id: ossrh
-          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
-          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
-      - name: Publish to the Maven Central Repository
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+      - name: Set projects Maven version to GitHub Action GUI set version
+        run: mvn versions:set "-DnewVersion=${{ github.event.inputs.releaseversion }}"
+      - name: Publish package
         run: mvn clean deploy -P release --batch-mode --no-transfer-progress
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
