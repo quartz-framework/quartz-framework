@@ -1,4 +1,5 @@
 name: release-to-maven-central
+
 on:
   workflow_dispatch:
     inputs:
@@ -6,12 +7,15 @@ on:
         description: 'Release version'
         required: true
         default: '0.0.1'
+
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
       - run: echo "Will start a Maven Central upload with version ${{ github.event.inputs.releaseversion }}"
+
       - uses: actions/checkout@v2
+
       - name: Set up Maven Central Repository
         uses: actions/setup-java@v1
         with:
@@ -21,9 +25,11 @@ jobs:
           server-password: MAVEN_PASSWORD
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
-      - name: Set projects Maven version to GitHub Action GUI set version
+
+      - name: Set project version
         run: mvn versions:set "-DnewVersion=${{ github.event.inputs.releaseversion }}"
-      - name: Build and deploy to Maven Central
+
+      - name: Build and deploy
         run: |
           mkdir -p ~/.m2
           cat > ~/.m2/settings.xml <<EOF
@@ -43,7 +49,15 @@ jobs:
             </servers>
           </settings>
           EOF
-          mvn clean deploy -P release --batch-mode --no-transfer-progress
+
+          # Decide se usa -P release com base no nome da versão
+          if [[ "${{ github.event.inputs.releaseversion }}" == *-SNAPSHOT ]]; then
+            echo "Deploying SNAPSHOT version (no -P release)"
+            mvn clean deploy --batch-mode --no-transfer-progress -DskipTests
+          else
+            echo "Deploying RELEASE version (with -P release)"
+            mvn clean deploy -P release --batch-mode --no-transfer-progress -DskipTests
+          fi
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
