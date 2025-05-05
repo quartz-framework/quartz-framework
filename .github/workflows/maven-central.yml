@@ -23,22 +23,4 @@ jobs:
           server-password: ${{ secrets.OSSRH_PASSWORD }}
       - name: Build and deploy to Maven Central
         run: |
-          mkdir -p ~/.m2
-          cat > ~/.m2/settings.xml <<EOF
-          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
-                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
-            <servers>
-              <server>
-                <id>ossrh</id>
-                <username>${{ secrets.OSSRH_USERNAME }}</username>
-                <password>${{ secrets.OSSRH_PASSWORD }}</password>
-              </server>
-              <server>
-                <id>gpg.passphrase</id>
-                <passphrase>${{ secrets.GPG_PASSPHRASE }}</passphrase>
-              </server>
-            </servers>
-          </settings>
-          EOF
           mvn clean deploy -P release --batch-mode --no-transfer-progress
