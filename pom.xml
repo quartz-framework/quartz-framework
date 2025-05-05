@@ -205,7 +205,8 @@
                                 </goals>
                                 <configuration>
                                     <useAgent>false</useAgent>
-                                    <passphraseServerId>gpg.passphrase</passphraseServerId>
+                                    <!--suppress UnresolvedMavenProperty -->
+                                    <passphrase>${env.MAVEN_GPG_PASSPHRASE}</passphrase>
                                     <gpgArguments>
                                         <arg>--pinentry-mode</arg>
                                         <arg>loopback</arg>
