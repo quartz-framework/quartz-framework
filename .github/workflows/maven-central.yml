@@ -13,44 +13,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo "Will start a Maven Central upload with version ${{ github.event.inputs.releaseversion }}"
-
       - uses: actions/checkout@v2
-
-      - name: Set up Maven Central Repository
-        uses: actions/setup-java@v1
+      - name: Set up Java and Maven Central
+        uses: actions/setup-java@v3
         with:
+          distribution: 'temurin'
           java-version: 17
           server-id: ossrh
-          server-username: MAVEN_USERNAME
-          server-password: MAVEN_PASSWORD
+          server-username: ${{ secrets.OSSRH_USERNAME }}
+          server-password: ${{ secrets.OSSRH_PASSWORD }}
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
-          gpg-passphrase: MAVEN_GPG_PASSPHRASE
-
+          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
       - name: Set project version
         run: mvn versions:set "-DnewVersion=${{ github.event.inputs.releaseversion }}"
-
       - name: Build and deploy
         run: |
-          mkdir -p ~/.m2
-          cat > ~/.m2/settings.xml <<EOF
-          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
-                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
-            <servers>
-              <server>
-                <id>ossrh</id>
-                <username>${{ secrets.OSSRH_USERNAME }}</username>
-                <password>${{ secrets.OSSRH_PASSWORD }}</password>
-              </server>
-              <server>
-                <id>gpg.passphrase</id>
-                <passphrase>${{ secrets.GPG_PASSPHRASE }}</passphrase>
-              </server>
-            </servers>
-          </settings>
-          EOF
-
-          # Decide se usa -P release com base no nome da versão
           if [[ "${{ github.event.inputs.releaseversion }}" == *-SNAPSHOT ]]; then
             echo "Deploying SNAPSHOT version (no -P release)"
             mvn clean deploy --batch-mode --no-transfer-progress -DskipTests
@@ -58,7 +35,3 @@ jobs:
             echo "Deploying RELEASE version (with -P release)"
             mvn clean deploy -P release --batch-mode --no-transfer-progress -DskipTests
           fi
-        env:
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
