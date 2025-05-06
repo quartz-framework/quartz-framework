@@ -371,12 +371,6 @@ public class DefaultPluginBeanDefinitionRegistry implements PluginBeanDefinition
         val normal = candidates.stream()
                 .filter(d -> !d.isPreferred() && !d.isSecondary())
                 .toList();
-        val ambiguousNormals = normal.stream()
-                .filter(d -> !d.isNamedInstance())
-                .toList();
-        if (ambiguousNormals.size() > 1) {
-            log.warn("Multiple unnamed normal beans found (no @Preferred/@Secondary/@NamedInstance): '{}'", ambiguousNormals.stream().map(PluginBeanDefinition::getName).collect(Collectors.joining(", ")));
-        }
         if (!normal.isEmpty()) return normal.get(0);
         val secondary = candidates.stream().filter(PluginBeanDefinition::isSecondary).toList();
         if (secondary.size() > 1) {
