@@ -34,3 +34,14 @@ jobs:
             echo "Deploying RELEASE version"
             mvn -s .mvn/.m2/settings.xml --batch-mode clean deploy -P release --no-transfer-progress -DskipTests -Dgpg.passphrase="${MAVEN_GPG_PASSPHRASE}"
           fi
+      - name: Create Release
+        if: success()
+        id: create_release
+        uses: comnoco/create-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.releaseversion }}
+          release_name: Release ${{ github.event.inputs.releaseversion }}
+          draft: false
+          prerelease: ${{ contains(github.event.inputs.releaseversion, '-SNAPSHOT') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
