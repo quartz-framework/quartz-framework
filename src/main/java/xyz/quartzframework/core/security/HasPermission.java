@@ -14,21 +14,21 @@ import java.lang.annotation.Target;
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@PluginAuthorize("#params.?[!#root.hasPermission(#this)].length == 0")
+@Authorize("#params.?[!#root.hasPermission(#this)].length == 0")
 public @interface HasPermission {
 
     /**
      * The permission array to be checked over the current sender in the {@link SenderSession}.
      * All permissions must be satisfied to the call be allowed.
      */
-    @AliasFor(annotation = PluginAuthorize.class, attribute = "params")
+    @AliasFor(annotation = Authorize.class, attribute = "params")
     String[] value();
 
     /**
      * The message to be thrown in {@link PermissionDeniedException PermissionDeniedException}
      * if the sender is not a player.
      */
-    @AliasFor(annotation = PluginAuthorize.class, attribute = "message")
+    @AliasFor(annotation = Authorize.class, attribute = "message")
     String message() default "";
 
 }

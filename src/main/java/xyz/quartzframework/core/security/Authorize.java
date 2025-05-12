@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface PluginAuthorize {
+public @interface Authorize {
 
     /**
      * The expression to be run before the method is called.
