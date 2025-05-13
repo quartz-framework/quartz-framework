@@ -81,6 +81,13 @@ public abstract class AbstractQuartzContext<T> implements QuartzContext<T> {
         scanAndRegisterInjectables();
         validateAndCleanInvalidBeans();
         logActiveProfiles();
+        phase(PluginBeanDefinition::isConfigurer,
+                (b) ->
+                        !b.isInitialized() &&
+                                !b.isAspect() &&
+                                !b.isBootstrapper() &&
+                                !b.isContextBootstrapper(),
+                (b) -> b.construct(getBeanFactory()));
         phase(PluginBeanDefinition::isAspect,
                 (b) ->
                         !b.isInitialized() &&
@@ -94,13 +101,6 @@ public abstract class AbstractQuartzContext<T> implements QuartzContext<T> {
                         !b.isAspect() &&
                         !b.isBootstrapper() &&
                         !b.isConfigurer(),
-                (b) -> b.construct(getBeanFactory()));
-        phase(PluginBeanDefinition::isConfigurer,
-                (b) ->
-                        !b.isInitialized() &&
-                        !b.isAspect() &&
-                        !b.isBootstrapper() &&
-                        !b.isContextBootstrapper(),
                 (b) -> b.construct(getBeanFactory()));
         phase(PluginBeanDefinition::isBootstrapper,
                 (b) ->
