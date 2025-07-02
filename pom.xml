@@ -209,6 +209,7 @@
                         <configuration>
                             <publishingServerId>central</publishingServerId>
                             <autoPublish>true</autoPublish>
+                            <centralSnapshotsUrl>https://s01.oss.sonatype.org/content/repositories/snapshots</centralSnapshotsUrl>
                         </configuration>
                     </plugin>
                 </plugins>
