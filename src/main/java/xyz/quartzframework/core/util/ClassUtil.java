@@ -5,6 +5,7 @@ import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
@@ -18,9 +19,27 @@ public class ClassUtil {
 
     public boolean isClassLoaded(String className, ClassLoader classLoader) {
         try {
-            Class.forName(className, false, classLoader);
-            return true;
+            val clazz = Class.forName(className, false, classLoader);
+            return isAllDependenciesResolved(clazz);
         } catch (ClassNotFoundException exception) {
+            return false;
+        }
+    }
+
+    public boolean isAllDependenciesResolved(Class<?> clazz) {
+        try {
+            for (Method method : clazz.getDeclaredMethods()) {
+                method.getReturnType();
+                method.getParameterTypes();
+            }
+            for (var constructor : clazz.getDeclaredConstructors()) {
+                constructor.getParameterTypes();
+            }
+            for (var field : clazz.getDeclaredFields()) {
+                field.getType();
+            }
+            return true;
+        } catch (NoClassDefFoundError e) {
             return false;
         }
     }
