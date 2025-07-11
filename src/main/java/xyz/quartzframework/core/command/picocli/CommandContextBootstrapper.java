@@ -4,12 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.springframework.core.annotation.AnnotationUtils;
 import picocli.CommandLine;
+import xyz.quartzframework.core.bean.BeanInjector;
 import xyz.quartzframework.core.bean.annotation.*;
 import xyz.quartzframework.core.bean.factory.PluginBeanFactory;
 import xyz.quartzframework.core.command.SubCommand;
 import xyz.quartzframework.core.common.Pair;
 import xyz.quartzframework.core.context.annotation.ContextBootstrapper;
-import xyz.quartzframework.core.util.InjectionUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,7 +34,7 @@ public class CommandContextBootstrapper {
         val candidates = pluginBeanFactory.getBeansWithAnnotation(CommandLine.Command.class);
         val commandCandidates = new ArrayList<>(candidates.values());
         val unwrappedCandidates = commandCandidates.stream()
-                .map(InjectionUtil::unwrapIfProxy)
+                .map(BeanInjector::unwrapIfProxy)
                 .toList();
         unwrappedCandidates.forEach(candidate -> {
             val candidateClass = candidate.getClass();
@@ -105,7 +105,6 @@ public class CommandContextBootstrapper {
     }
 }
 
-@Injectable
 @CommandLine.Command
 class BaseCommand implements Runnable {
 

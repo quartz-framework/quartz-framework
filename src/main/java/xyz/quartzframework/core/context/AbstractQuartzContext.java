@@ -7,22 +7,21 @@ import lombok.val;
 import org.springframework.lang.Nullable;
 import xyz.quartzframework.core.QuartzApplication;
 import xyz.quartzframework.core.QuartzPlugin;
-import xyz.quartzframework.core.bean.PluginBeanDefinition;
 import xyz.quartzframework.core.bean.annotation.NoProxy;
+import xyz.quartzframework.core.bean.definition.DefaultBeanDefinitionBuilder;
+import xyz.quartzframework.core.bean.definition.PluginBeanDefinition;
+import xyz.quartzframework.core.bean.definition.PluginBeanDefinitionBuilder;
+import xyz.quartzframework.core.bean.definition.PluginBeanDefinitionRegistry;
+import xyz.quartzframework.core.bean.definition.metadata.TypeMetadata;
 import xyz.quartzframework.core.bean.factory.PluginBeanFactory;
-import xyz.quartzframework.core.bean.registry.PluginBeanDefinitionRegistry;
 import xyz.quartzframework.core.bean.strategy.BeanNameStrategy;
 import xyz.quartzframework.core.condition.Evaluators;
 import xyz.quartzframework.core.context.annotation.Configurer;
 import xyz.quartzframework.core.exception.ContextInitializationException;
 import xyz.quartzframework.core.util.BeanUtil;
-import xyz.quartzframework.core.util.ClassUtil;
 
 import java.net.URLClassLoader;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -55,18 +54,23 @@ public abstract class AbstractQuartzContext<T> implements QuartzContext<T> {
     @Setter
     private PluginBeanDefinitionRegistry beanDefinitionRegistry;
 
+    @Setter
+    private PluginBeanDefinitionBuilder beanDefinitionBuilder;
+
     public AbstractQuartzContext(Class<? extends QuartzPlugin<T>> pluginClass,
                                  @Nullable PluginBeanDefinitionRegistry beanDefinitionRegistry,
+                                 @Nullable DefaultBeanDefinitionBuilder beanDefinitionBuilder,
                                  @Nullable BeanNameStrategy beanNameStrategy,
                                  @Nullable PluginBeanFactory beanFactory,
                                  @Nullable URLClassLoader classLoader) {
         synchronized (AbstractQuartzContext.class) {
             if (!pluginClass.isAnnotationPresent(QuartzApplication.class)) {
-                throw new ContextInitializationException("Application class must be annotated with @PluginApplication");
+                throw new ContextInitializationException("Application class must be annotated with @QuartzApplication");
             }
             this.quartzApplication = pluginClass.getAnnotation(QuartzApplication.class);
             this.beanFactory = beanFactory;
             this.beanNameStrategy = beanNameStrategy;
+            this.beanDefinitionBuilder = beanDefinitionBuilder;
             this.beanDefinitionRegistry = beanDefinitionRegistry;
             this.classLoader = classLoader;
             this.pluginClass = pluginClass;
@@ -79,7 +83,6 @@ public abstract class AbstractQuartzContext<T> implements QuartzContext<T> {
         performInitializationChecks();
         registerDefaultBeans();
         scanAndRegisterInjectables();
-        validateAndCleanInvalidBeans();
         logActiveProfiles();
         phase(PluginBeanDefinition::isConfigurer,
                 (b) ->
@@ -135,75 +138,70 @@ public abstract class AbstractQuartzContext<T> implements QuartzContext<T> {
         val packages = Stream
                 .concat(Arrays.stream(getQuartzApplication().basePackages()), Stream.of(pluginClass.getPackageName()))
                 .toArray(String[]::new);
-        Predicate<Class<?>> isIncluded = candidate -> !Arrays.asList(quartzApplication.excludeClasses()).contains(candidate) && !candidate.isAnnotation();
-        val injectables = ClassUtil.scan(packages,
+        Predicate<TypeMetadata> isIncluded = candidate -> Arrays
+                .stream(quartzApplication.excludeClasses())
+                .map(c -> TypeMetadata.of(c, classLoader))
+                .noneMatch(c -> candidate.getFullName().equals(c.getFullName())) && !candidate.isAnnotation();
+        val scan = TypeMetadata.scan(packages,
                 getQuartzApplication().exclude(),
-                (b -> BeanUtil.isInjectable(b) && isIncluded.test(b)),
-                isVerbose());
+                (BeanUtil::isInjectable),
+                (b -> getBeanDefinitionBuilder().isInjectable(b) && isIncluded.test(b)),
+                isVerbose(), classLoader)
+                .stream()
+                .toList();
+        val injectables = new ArrayList<>(scan);
         val discovery = injectables
                 .stream()
-                .map(BeanUtil::discovery)
+                .map(getBeanDefinitionBuilder()::discovery)
                 .filter(s -> s.length > 0)
                 .flatMap(Arrays::stream)
                 .filter(s -> !Arrays.asList(quartzApplication.basePackages()).contains(s))
                 .toArray(String[]::new);
-        val mainDiscovery = BeanUtil.discovery(getPluginClass());
-        val discoverResult = ClassUtil.scan(
+        val mainDiscovery = getBeanDefinitionBuilder().discovery(TypeMetadata.of(getPluginClass(), classLoader));
+        val discoverResult = TypeMetadata.scan(
                 Stream.concat(Arrays.stream(mainDiscovery), Arrays.stream(discovery)).toArray(String[]::new),
                 getQuartzApplication().exclude(),
-                (b -> BeanUtil.isInjectable(b) && isIncluded.test(b) && !injectables.contains(b)),
-                isVerbose());
+                (BeanUtil::isInjectable),
+                (b -> getBeanDefinitionBuilder().isInjectable(b) && isIncluded.test(b) && !injectables.contains(b)),
+                isVerbose(), classLoader)
+                .stream()
+                .toList();
         injectables.addAll(discoverResult);
         val imports = injectables
                 .stream()
-                .map(BeanUtil::getImports)
+                .map(getBeanDefinitionBuilder()::getImports)
                 .flatMap(Collection::stream)
                 .filter(i -> !injectables.contains(i))
-                .peek(c -> {
-                    if (!ClassUtil.isClassLoaded(c.getName(), classLoader)) {
-                        try {
-                            classLoader.loadClass(c.getName());
-                        } catch (ClassNotFoundException e) {
-                            throw new ContextInitializationException("Failed to import " + c.getName(), e);
-                        }
-                    }
-                })
                 .toList();
         injectables.addAll(imports);
         log.info("Scan found {} classes and took {} ms", injectables.size(), ((System.currentTimeMillis() - initializationTime)));
         injectables
                 .stream()
+                .distinct()
                 .filter(injectable -> {
-                    val annotation = injectable.getAnnotation(Configurer.class);
-                    if (annotation != null) {
+                    if (getBeanDefinitionBuilder().isConfigurer(injectable)) {
                         if (!quartzApplication.enableConfigurers()) {
-                            return annotation.force();
+                            return injectable.getAnnotation(Configurer.class)
+                                    .map(a -> a.getAttribute("force", boolean.class))
+                                    .orElse(false);
                         }
                         return true;
                     }
                     return true;
                 })
                 .filter(injectable -> {
-                    if (BeanUtil.isContextBootstrapper(injectable)) {
-                        if (!injectable.getPackageName().startsWith(ClassUtil.INTERNAL_PACKAGE + ".")) {
-                            log.warn("Class {} is annotated with @ContextBootstrapper but is not in an internal package — ignoring", injectable.getName());
+                    if (getBeanDefinitionBuilder().isContextBootstrapper(injectable)) {
+                        if (!injectable.getPackageName().startsWith(TypeMetadata.INTERNAL_PACKAGE + ".")) {
+                            log.warn("Class {} is annotated with @ContextBootstrapper but is not in an internal package — ignoring", injectable.getSimpleName());
                             return false;
                         }
                     }
                     return true;
                 })
-                .forEach(injectable -> getBeanDefinitionRegistry().defineBeans(injectable));
-    }
-
-    private void validateAndCleanInvalidBeans() {
-        val invalidBeans = getBeanDefinitionRegistry()
-                .getBeanDefinitions()
-                .stream()
-                .filter(b -> !b.isValid(getBeanFactory()))
-                .toList();
-        for (val b : invalidBeans) {
-            getBeanDefinitionRegistry().unregisterBeanDefinition(b.getId());
-        }
+                .map(metadata -> getBeanDefinitionBuilder().create(metadata))
+                .filter(Objects::nonNull)
+                .peek(injectable -> getBeanDefinitionRegistry().registerBeanDefinition(injectable.getName(), injectable))
+                .forEach(definition -> definition.provideMethods(getBeanDefinitionRegistry(), getBeanDefinitionBuilder(), getBeanNameStrategy()));
     }
 
     private void logActiveProfiles() {
@@ -216,7 +214,7 @@ public abstract class AbstractQuartzContext<T> implements QuartzContext<T> {
         getBeanDefinitionRegistry()
                 .getBeanDefinitions()
                 .stream()
-                .sorted(Comparator.comparingInt(PluginBeanDefinition::getOrder))
+                .sorted(Comparator.comparingInt(PluginBeanDefinition::getOrder).reversed())
                 .filter(pluginBeanDefinition -> !pluginBeanDefinition.isDeferred())
                 .filter(phaseFilter)
                 .filter(filter)
@@ -233,6 +231,9 @@ public abstract class AbstractQuartzContext<T> implements QuartzContext<T> {
         if (getBeanDefinitionRegistry() == null) {
             throw new ContextInitializationException("Can not start a context without a Bean definition registry.");
         }
+        if (getBeanDefinitionBuilder() == null) {
+            throw new ContextInitializationException("Can not start a context without a Bean definition builder.");
+        }
         if (getBeanFactory() == null) {
             throw new ContextInitializationException("Can not start a context without a Bean factory.");
         }
@@ -248,11 +249,39 @@ public abstract class AbstractQuartzContext<T> implements QuartzContext<T> {
     }
 
     private void registerDefaultBeans() {
-        getBeanDefinitionRegistry().registerSingletonBeanDefinition(URLClassLoader.class, getClassLoader());
-        getBeanDefinitionRegistry().registerSingletonBeanDefinition(QuartzPlugin.class, this.getQuartzPlugin());
-        getBeanDefinitionRegistry().registerSingletonBeanDefinition(getPluginClass(), this.getQuartzPlugin());
-        getBeanDefinitionRegistry().registerSingletonBeanDefinition(QuartzContext.class, this);
-        getBeanDefinitionRegistry().registerSingletonBeanDefinition(AbstractQuartzContext.class, this);
-        getBeanDefinitionRegistry().registerSingletonBeanDefinition(getClass(), this);
+        registerSingleton(URLClassLoader.class, getClassLoader());
+        registerSingleton(QuartzPlugin.class, this.getQuartzPlugin());
+        registerSingleton(getPluginClass(), this.getQuartzPlugin());
+        registerSingleton(QuartzContext.class, this);
+        registerSingleton(AbstractQuartzContext.class, this);
+        registerSingleton(getClass(), this);
+    }
+    
+    @Override
+    public void registerSingleton(Object instance) {
+        registerSingleton(instance.getClass(), instance);
+    }
+
+    @Override
+    public void registerSingleton(Class<?> clazz, Object instance) {
+        val typeMetadata = TypeMetadata.raw(clazz, classLoader);
+        val beanName = beanNameStrategy.generateBeanName(typeMetadata);
+        registerSingleton(beanName, clazz, instance);
+    }
+
+    @Override
+    public void registerSingleton(String beanName, Class<?> clazz, Object instance) {
+        val typeMetadata = TypeMetadata.raw(clazz, classLoader);
+        registerSingleton(beanName, typeMetadata, instance);
+    }
+
+    @Override
+    public void registerSingleton(String beanName, TypeMetadata metadata, Object instance) {
+        val builder = getBeanDefinitionBuilder();
+        val definition = builder.create(metadata);
+        val registry = getBeanDefinitionRegistry();
+        definition.setSingleton(true);
+        registry.updateBeanInstance(definition, instance);
+        registry.registerBeanDefinition(beanName, definition);
     }
 }
