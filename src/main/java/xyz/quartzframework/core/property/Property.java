@@ -15,6 +15,4 @@ public @interface Property {
 
     String source() default "application";
 
-    boolean forceWrite() default false;
-
 }

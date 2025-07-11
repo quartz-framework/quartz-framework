@@ -4,12 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.val;
+import xyz.quartzframework.core.bean.definition.metadata.TypeMetadata;
 import xyz.quartzframework.core.condition.annotation.ActivateWhenClassMissing;
 import xyz.quartzframework.core.condition.annotation.ActivateWhenClassPresent;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor
@@ -18,17 +19,28 @@ public class ClassConditionMetadata {
 
     private Set<String> classNames;
 
-    public static ClassConditionMetadata of(ActivateWhenClassPresent annotation) {
-        if (annotation == null) return null;
-        val classes = Arrays.stream(annotation.value()).map(Class::getName).collect(Collectors.toSet());
-        classes.addAll(Arrays.stream(annotation.classNames()).collect(Collectors.toSet()));
-        return new ClassConditionMetadata(classes);
+    public static ClassConditionMetadata of(TypeMetadata metadata, Class<?> conditionType) {
+        return metadata.getAnnotation(conditionType.getName())
+                .map(annotation -> {
+                    Set<String> result = new HashSet<>();
+                    val classes = annotation.getAttribute("value", Class[].class);
+                    if (classes != null) {
+                        Arrays.stream(classes).map(Class::getName).forEach(result::add);
+                    }
+                    val classNames = annotation.getAttribute("classNames", String[].class);
+                    if (classNames != null) {
+                        result.addAll(Arrays.asList(classNames));
+                    }
+                    return new ClassConditionMetadata(result);
+                })
+                .orElse(null);
     }
 
-    public static ClassConditionMetadata of(ActivateWhenClassMissing annotation) {
-        if (annotation == null) return null;
-        val classes = Arrays.stream(annotation.value()).map(Class::getName).collect(Collectors.toSet());
-        classes.addAll(Arrays.stream(annotation.classNames()).collect(Collectors.toSet()));
-        return new ClassConditionMetadata(classes);
+    public static ClassConditionMetadata ofPresent(TypeMetadata metadata) {
+        return of(metadata, ActivateWhenClassPresent.class);
+    }
+
+    public static ClassConditionMetadata ofMissing(TypeMetadata metadata) {
+        return of(metadata, ActivateWhenClassMissing.class);
     }
 }

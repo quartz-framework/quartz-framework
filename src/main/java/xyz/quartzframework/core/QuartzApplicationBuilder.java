@@ -2,10 +2,12 @@ package xyz.quartzframework.core;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import xyz.quartzframework.core.bean.definition.DefaultBeanDefinitionBuilder;
+import xyz.quartzframework.core.bean.definition.DefaultBeanDefinitionRegistry;
+import xyz.quartzframework.core.bean.definition.PluginBeanDefinitionBuilder;
+import xyz.quartzframework.core.bean.definition.PluginBeanDefinitionRegistry;
 import xyz.quartzframework.core.bean.factory.DefaultPluginBeanFactory;
 import xyz.quartzframework.core.bean.factory.PluginBeanFactory;
-import xyz.quartzframework.core.bean.registry.DefaultPluginBeanDefinitionRegistry;
-import xyz.quartzframework.core.bean.registry.PluginBeanDefinitionRegistry;
 import xyz.quartzframework.core.bean.strategy.BeanNameStrategy;
 import xyz.quartzframework.core.bean.strategy.DefaultBeanNameStrategy;
 import xyz.quartzframework.core.context.AbstractQuartzContext;
@@ -24,6 +26,8 @@ public abstract class QuartzApplicationBuilder<T, C extends AbstractQuartzContex
     private URLClassLoader classLoader;
 
     private BeanNameStrategy beanNameStrategy = new DefaultBeanNameStrategy();
+
+    private PluginBeanDefinitionBuilder beanDefinitionBuilder;
 
     private PluginBeanDefinitionRegistry beanDefinitionRegistry;
 
@@ -44,17 +48,24 @@ public abstract class QuartzApplicationBuilder<T, C extends AbstractQuartzContex
         return this;
     }
 
-    public QuartzApplicationBuilder<T, C> beanRegistry(PluginBeanDefinitionRegistry registry) {
+    public QuartzApplicationBuilder<T, C> beanDefinitionRegistry(PluginBeanDefinitionRegistry registry) {
         this.beanDefinitionRegistry = registry;
+        return this;
+    }
+
+    public QuartzApplicationBuilder<T, C> beanDefinitionBuilder(PluginBeanDefinitionBuilder builder) {
+        this.beanDefinitionBuilder = builder;
         return this;
     }
 
     public void run(C context) {
         if (pluginInstance == null) throw new IllegalStateException("Plugin instance must be set");
         if (classLoader == null) classLoader = (URLClassLoader) pluginInstance.getPlugin().getClass().getClassLoader();
-        if (beanDefinitionRegistry == null) beanDefinitionRegistry = new DefaultPluginBeanDefinitionRegistry(beanNameStrategy);
+        if (beanDefinitionRegistry == null) beanDefinitionRegistry = new DefaultBeanDefinitionRegistry(classLoader);
         if (beanFactory == null) beanFactory = new DefaultPluginBeanFactory(classLoader, beanDefinitionRegistry, beanNameStrategy);
+        if (beanDefinitionBuilder == null) beanDefinitionBuilder = new DefaultBeanDefinitionBuilder(beanFactory, beanNameStrategy);
         context.setBeanFactory(beanFactory);
+        context.setBeanDefinitionBuilder(beanDefinitionBuilder);
         context.setBeanDefinitionRegistry(beanDefinitionRegistry);
         context.setBeanNameStrategy(beanNameStrategy);
         context.setQuartzPlugin(pluginInstance);

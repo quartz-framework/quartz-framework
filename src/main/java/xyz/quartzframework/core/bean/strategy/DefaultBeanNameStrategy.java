@@ -1,19 +1,29 @@
 package xyz.quartzframework.core.bean.strategy;
 
+import org.springframework.beans.factory.annotation.Qualifier;
+import xyz.quartzframework.core.bean.annotation.NamedInstance;
 import xyz.quartzframework.core.bean.annotation.NoProxy;
-
-import java.lang.reflect.Method;
+import xyz.quartzframework.core.bean.definition.metadata.TypeMetadata;
 
 @NoProxy
 public class DefaultBeanNameStrategy implements BeanNameStrategy {
 
     @Override
-    public String generateBeanName(Class<?> clazz) {
-        return clazz.getSimpleName();
+    public String generateBeanName(TypeMetadata metadata) {
+        return metadata
+                .getAnnotation(NamedInstance.class)
+                .or(() -> metadata.getAnnotation(Qualifier.class))
+                .map(a -> a.getAttribute("value", String.class))
+                .orElseGet(() -> {
+                    if (metadata.isMethodBean()) {
+                        return metadata.getDeclaredByClass() + "#" + metadata.getDeclaredByMethod();
+                    } else {
+                        return lowerCamelCase(metadata.getRawName());
+                    }
+                });
     }
 
-    @Override
-    public String generateBeanName(Method method) {
-        return method.getDeclaringClass().getSimpleName() + "#" + method.getName();
+    private String lowerCamelCase(String s) {
+        return Character.toLowerCase(s.charAt(0)) + s.substring(1);
     }
 }

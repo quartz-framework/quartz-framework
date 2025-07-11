@@ -1,19 +1,23 @@
-package xyz.quartzframework.core.util;
+package xyz.quartzframework.core.bean;
 
 import lombok.SneakyThrows;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.pacesys.reflect.Reflect;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ResolvableType;
-import xyz.quartzframework.core.bean.BeanProvider;
 import xyz.quartzframework.core.bean.annotation.Inject;
 import xyz.quartzframework.core.bean.factory.PluginBeanFactory;
+import xyz.quartzframework.core.exception.BeanCreationException;
 import xyz.quartzframework.core.property.Property;
 import xyz.quartzframework.core.property.PropertyPostProcessor;
 import xyz.quartzframework.core.property.PropertySupplier;
+import xyz.quartzframework.core.util.BeanUtil;
+import xyz.quartzframework.core.util.CollectionUtil;
+import xyz.quartzframework.core.util.ReflectionUtil;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -21,13 +25,17 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.Supplier;
 
+@Slf4j
 @UtilityClass
-public class InjectionUtil {
+public class BeanInjector {
 
     @SneakyThrows
     @SuppressWarnings("unchecked")
     public <T> T newInstance(PluginBeanFactory pluginBeanFactory, Class<T> clazz) {
-        val constructors = clazz.getConstructors();
+        val constructors = clazz.getDeclaredConstructors();
+        if (constructors.length == 0) {
+            throw new BeanCreationException("No public constructors found for class: " + clazz.getName());
+        }
         var selectedConstructor = constructors[0];
         if (constructors.length > 1) {
             for (Constructor<?> constructor : constructors) {
@@ -112,7 +120,7 @@ public class InjectionUtil {
         val beanDefinition = registry.getBeanDefinition(clazz);
         Object bean = beanDefinition.getInstance();
         if (bean == null) {
-            bean = InjectionUtil.newInstance(pluginBeanFactory, clazz);
+            bean = BeanInjector.newInstance(pluginBeanFactory, clazz);
             registry.updateBeanInstance(beanDefinition, bean);
         }
         return (T) method.invoke(bean, parameterInstances);
@@ -122,7 +130,7 @@ public class InjectionUtil {
     public void recursiveInjection(PluginBeanFactory pluginBeanFactory, Object bean) {
         if (bean == null) return;
         val target = AopUtils.getTargetClass(bean);
-        for (val field : BeanUtil.reorder(new ArrayList<>(ReflectionUtil.getFields(target, Inject.class, Autowired.class, Property.class)))) {
+        for (val field : CollectionUtil.reorder(ReflectionUtil.getFields(target, Inject.class, Autowired.class, Property.class))) {
             field.setAccessible(true);
             Object instance;
             val type = field.getType();
@@ -149,11 +157,11 @@ public class InjectionUtil {
                     }
                 }
             }
-            val realTarget = InjectionUtil.unwrapIfProxy(bean);
+            val realTarget = BeanInjector.unwrapIfProxy(bean);
             field.set(realTarget, instance);
             recursiveInjection(pluginBeanFactory, instance);
         }
-        for (val method : BeanUtil.reorder(new ArrayList<>(ReflectionUtil.getMethods(Reflect.MethodType.INSTANCE, target, Inject.class)))) {
+        for (val method : CollectionUtil.reorder(ReflectionUtil.getMethods(Reflect.MethodType.INSTANCE, target, Inject.class))) {
             newInstance(pluginBeanFactory, method);
         }
     }

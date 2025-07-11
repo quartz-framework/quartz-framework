@@ -4,22 +4,18 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.val;
-import org.pacesys.reflect.Reflect;
 import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.core.ResolvableType;
 import org.springframework.lang.NonNull;
+import xyz.quartzframework.core.bean.BeanInjector;
 import xyz.quartzframework.core.bean.BeanProvider;
-import xyz.quartzframework.core.bean.PluginBeanDefinition;
 import xyz.quartzframework.core.bean.annotation.NoProxy;
-import xyz.quartzframework.core.bean.annotation.Provide;
-import xyz.quartzframework.core.bean.registry.PluginBeanDefinitionRegistry;
+import xyz.quartzframework.core.bean.definition.PluginBeanDefinition;
+import xyz.quartzframework.core.bean.definition.PluginBeanDefinitionRegistry;
 import xyz.quartzframework.core.bean.strategy.BeanNameStrategy;
 import xyz.quartzframework.core.exception.BeanCreationException;
-import xyz.quartzframework.core.util.BeanUtil;
-import xyz.quartzframework.core.util.InjectionUtil;
-import xyz.quartzframework.core.util.ReflectionUtil;
 
 import javax.annotation.PreDestroy;
 import java.lang.annotation.Annotation;
@@ -104,7 +100,8 @@ public class DefaultPluginBeanFactory implements PluginBeanFactory {
 
     @Override
     public boolean containsBean(@NonNull String name) {
-        return registry.getBeanDefinitions()
+        return registry
+                .getBeanDefinitions()
                 .stream()
                 .anyMatch(d -> d.getName().equals(name));
     }
@@ -139,7 +136,7 @@ public class DefaultPluginBeanFactory implements PluginBeanFactory {
                 .stream()
                 .filter(d -> d.getName().equals(name))
                 .findFirst()
-                .map(PluginBeanDefinition::getType)
+                .map(def -> def.getTypeMetadata().getType())
                 .orElseThrow(() -> new NoSuchBeanDefinitionException(name));
     }
 
@@ -210,7 +207,8 @@ public class DefaultPluginBeanFactory implements PluginBeanFactory {
                 .stream()
                 .collect(Collectors.toMap(
                         PluginBeanDefinition::getName,
-                        def -> (T) getBean(def.getName(), type)
+                        def -> getBean(def.getName(), type),
+                        (a, b) -> a
                 ));
     }
 
@@ -226,8 +224,7 @@ public class DefaultPluginBeanFactory implements PluginBeanFactory {
         return registry
                 .getBeanDefinitions()
                 .stream()
-                .filter(def -> def.getType().isAnnotationPresent(annotationType)
-                || def.getLiteralType().isAnnotationPresent(annotationType))
+                .filter(def -> def.getTypeMetadata().hasAnnotation(annotationType))
                 .map(PluginBeanDefinition::getName)
                 .toArray(String[]::new);
     }
@@ -238,8 +235,7 @@ public class DefaultPluginBeanFactory implements PluginBeanFactory {
         return registry
                 .getBeanDefinitions()
                 .stream()
-                .filter(def -> def.getType().isAnnotationPresent(annotationType)
-                        || def.getLiteralType().isAnnotationPresent(annotationType))
+                .filter(def -> def.getTypeMetadata().hasAnnotation(annotationType))
                 .collect(Collectors.toMap(
                         PluginBeanDefinition::getName,
                         def -> getBean(def.getName())
@@ -254,7 +250,10 @@ public class DefaultPluginBeanFactory implements PluginBeanFactory {
                 .filter(d -> d.getName().equals(beanName))
                 .findFirst()
                 .orElseThrow(() -> new NoSuchBeanDefinitionException(beanName));
-        return def.getType().getAnnotation(annotationType);
+        return def.getTypeMetadata()
+                .getAnnotation(annotationType)
+                .map(meta -> meta.toReflectiveAnnotation(classLoader, annotationType))
+                .orElse(null);
     }
 
     @Override
@@ -264,7 +263,6 @@ public class DefaultPluginBeanFactory implements PluginBeanFactory {
 
     @NonNull
     @Override
-    @SuppressWarnings("unchecked")
     public <A extends Annotation> Set<A> findAllAnnotationsOnBean(@NonNull String beanName, @NonNull Class<A> annotationType, boolean allowFactoryBeanInit) throws NoSuchBeanDefinitionException {
         val def = registry
                 .getBeanDefinitions()
@@ -273,10 +271,14 @@ public class DefaultPluginBeanFactory implements PluginBeanFactory {
                 .findFirst()
                 .orElseThrow(() -> new NoSuchBeanDefinitionException(beanName));
         Set<A> annotations = new HashSet<>();
-        for (Annotation ann : def.getType().getAnnotations()) {
-            if (annotationType.isAssignableFrom(ann.annotationType())) {
-                annotations.add((A) ann);
-            }
+        for (val annotation : def.getTypeMetadata().getAnnotations()) {
+            try {
+                Class<?> annType = Class.forName(annotation.getName(), false, classLoader);
+                if (annotationType.isAssignableFrom(annType)) {
+                    A resolved = annotation.toReflectiveAnnotation(classLoader, annotationType);
+                    if (resolved != null) annotations.add(resolved);
+                }
+            } catch (ClassNotFoundException ignored) {}
         }
         return annotations;
     }
@@ -307,7 +309,7 @@ public class DefaultPluginBeanFactory implements PluginBeanFactory {
         val stack = constructionStack.get();
         if (stack.contains(pluginBeanDefinition)) {
             val cycle = stack.stream()
-                    .map(b -> b.getName() + "(" + b.getType().getSimpleName() + ")")
+                    .map(b -> b.getName() + "(" + b.getTypeMetadata().getSimpleName() + ")")
                     .collect(Collectors.joining(" -> "));
             throw new BeanCreationException("Circular dependency detected: " + cycle + " -> " + pluginBeanDefinition.getName());
         }
@@ -317,7 +319,7 @@ public class DefaultPluginBeanFactory implements PluginBeanFactory {
                 return (T) pluginBeanDefinition.getInstance();
             }
             val instance = (T) createInstance(pluginBeanDefinition);
-            InjectionUtil.recursiveInjection(this, instance);
+            BeanInjector.recursiveInjection(this, instance);
             if (pluginBeanDefinition.isSingleton()) {
                 registry.updateBeanInstance(pluginBeanDefinition, instance);
             }
@@ -333,29 +335,17 @@ public class DefaultPluginBeanFactory implements PluginBeanFactory {
 
     @SuppressWarnings("unchecked")
     private <T> T createInstance(PluginBeanDefinition pluginBeanDefinition) {
-        Class<?> literalType = pluginBeanDefinition.getLiteralType();
+        val metadata = pluginBeanDefinition.getTypeMetadata();
         T instance;
         if (pluginBeanDefinition.isInternalBean()) {
-            instance = (T) InjectionUtil.newInstance(this, literalType);
+            val type = metadata.getType();
+            instance = (T) BeanInjector.newInstance(this, type);
         } else {
-            val methods = ReflectionUtil.getMethods(Reflect.MethodType.INSTANCE, literalType, Provide.class);
-            val method = methods
-                    .stream()
-                    .filter(k -> {
-                        val nameCandidate = beanNameStrategy.generateBeanName(k);
-                        if (BeanUtil.hasNamedInstance(k)) {
-                            return nameCandidate.equals(BeanUtil.getNamedInstance(k));
-                        } else {
-                            return pluginBeanDefinition.getName().equals(nameCandidate);
-                        }
-                    })
-                    .findFirst()
-                    .orElse(null);
-            if (method != null) {
-                instance = InjectionUtil.newInstance(this, method);
-            } else {
-                throw new BeanCreationException("Cannot create instance of " + pluginBeanDefinition.getName());
+            val matchingMethod = pluginBeanDefinition.getProvideMethods().get(0).getMethod();
+            if (matchingMethod == null) {
+                throw new BeanCreationException("Cannot create instance of " + pluginBeanDefinition.getName() + " — no matching @Provide method found");
             }
+            instance = BeanInjector.newInstance(this, matchingMethod);
         }
         if (shouldProxyWithAspect(pluginBeanDefinition)) {
             return aspectInstance(instance, pluginBeanDefinition.isSingleton());

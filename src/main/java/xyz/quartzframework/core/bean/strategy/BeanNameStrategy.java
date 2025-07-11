@@ -1,13 +1,11 @@
 package xyz.quartzframework.core.bean.strategy;
 
 import xyz.quartzframework.core.bean.annotation.NoProxy;
-
-import java.lang.reflect.Method;
+import xyz.quartzframework.core.bean.definition.metadata.TypeMetadata;
 
 @NoProxy
 public interface BeanNameStrategy {
 
-    String generateBeanName(Class<?> clazz);
+    String generateBeanName(TypeMetadata metadata);
 
-    String generateBeanName(Method method);
 }

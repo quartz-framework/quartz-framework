@@ -22,8 +22,16 @@ public class BeanProvider<T> implements ObjectProvider<T> {
         return factory.getBeansOfType(type).values().stream();
     }
 
-    public Optional<T> optional() {
+    public Optional<T> first() {
         return this.stream().findFirst();
+    }
+
+    public Optional<T> any() {
+        return this.stream().findAny();
+    }
+
+    public T find(String beanName) {
+        return this.factory.getBean(beanName, type);
     }
 
     public static <T> BeanProvider<T> of(PluginBeanFactory factory, Class<T> type) {

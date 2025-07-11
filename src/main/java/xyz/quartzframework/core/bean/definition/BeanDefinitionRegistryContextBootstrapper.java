@@ -1,4 +1,4 @@
-package xyz.quartzframework.core.bean.registry;
+package xyz.quartzframework.core.bean.definition;
 
 import xyz.quartzframework.core.bean.annotation.NoProxy;
 import xyz.quartzframework.core.bean.annotation.Preferred;
@@ -14,5 +14,11 @@ public class BeanDefinitionRegistryContextBootstrapper {
     @Preferred
     PluginBeanDefinitionRegistry beanDefinitionRegistry(QuartzContext<?> context) {
         return context.getBeanDefinitionRegistry();
+    }
+
+    @Provide
+    @Preferred
+    PluginBeanDefinitionBuilder beanDefinitionBuilder(QuartzContext<?> context) {
+        return context.getBeanDefinitionBuilder();
     }
 }

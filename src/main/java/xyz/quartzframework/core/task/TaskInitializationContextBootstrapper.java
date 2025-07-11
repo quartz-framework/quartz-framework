@@ -3,13 +3,14 @@ package xyz.quartzframework.core.task;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import xyz.quartzframework.core.bean.BeanInjector;
 import xyz.quartzframework.core.bean.annotation.NoProxy;
+import xyz.quartzframework.core.bean.definition.metadata.MethodMetadata;
 import xyz.quartzframework.core.bean.factory.PluginBeanFactory;
 import xyz.quartzframework.core.condition.annotation.ActivateWhenAnnotationPresent;
 import xyz.quartzframework.core.context.QuartzContext;
 import xyz.quartzframework.core.context.annotation.ContextBootstrapper;
 import xyz.quartzframework.core.context.annotation.ContextLoads;
-import xyz.quartzframework.core.util.InjectionUtil;
 
 import javax.annotation.PreDestroy;
 import java.time.ZoneId;
@@ -39,6 +40,7 @@ public class TaskInitializationContextBootstrapper {
                 .getBeanDefinitions()
                 .stream()
                 .flatMap(definition -> definition.getRepeatedTasksMethods().stream())
+                .map(MethodMetadata::getMethod)
                 .forEach(taskMethod -> {
                     val annotation = taskMethod.getAnnotation(RepeatedTask.class);
                     if (annotation == null) return;
@@ -48,7 +50,7 @@ public class TaskInitializationContextBootstrapper {
                     val timeUnit = annotation.timeUnit();
                     val cron = annotation.cron();
                     val zoneId = annotation.zoneId();
-                    Runnable task = () -> InjectionUtil.newInstance(beanFactory, taskMethod);
+                    Runnable task = () -> BeanInjector.newInstance(beanFactory, taskMethod);
                     if (fixedDelay == -1) {
                         taskFactory.scheduleCron(executorName, task, cron, zoneId.equalsIgnoreCase("default") ? ZoneId.systemDefault() : ZoneId.of(zoneId));
                     } else {
