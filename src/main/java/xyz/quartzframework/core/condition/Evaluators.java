@@ -24,38 +24,47 @@ public final class Evaluators {
 
     private Map<ConditionType, ConditionEvaluator> buildEvaluators() {
         Map<ConditionType, ConditionEvaluator> evaluators = new HashMap<>();
+
         evaluators.put(ConditionType.CONDITIONAL, (def, factory) -> {
             val cond = def.getGenericConditionMetadata();
-            return cond == null || factory.getBean(cond.getValue()).test();
+            return cond != null && factory.getBean(cond.getValue()).test();
         });
+
         evaluators.put(ConditionType.ON_CLASS, (def, factory) -> {
             val metadata = def.getClassConditionMetadata();
-            return metadata == null || metadata.getClassNames().stream().allMatch(n -> ClassUtil.isClassLoaded(n, factory.getClassLoader()));
+            return metadata != null && metadata.getClassNames().stream()
+                                .allMatch(n -> ClassUtil.isClassLoaded(n, factory.getClassLoader()));
         });
+
         evaluators.put(ConditionType.ON_MISSING_CLASS, (def, factory) -> {
             val metadata = def.getMissingClassConditionMetadata();
-            return metadata == null || metadata.getClassNames().stream().noneMatch(n -> ClassUtil.isClassLoaded(n, factory.getClassLoader()));
+            return metadata != null && metadata.getClassNames().stream()
+                                .noneMatch(n -> ClassUtil.isClassLoaded(n, factory.getClassLoader()));
         });
+
         evaluators.put(ConditionType.ON_BEAN, (def, factory) -> {
             val metadata = def.getBeanConditionMetadata();
-            return metadata == null || Arrays
-                    .stream(metadata.getClasses())
-                    .noneMatch(req -> factory.getRegistry().getBeanDefinitionsByType(req).isEmpty());
+            return metadata != null && metadata.getClassNames()
+                    .stream()
+                    .allMatch(className ->
+                            factory.getRegistry()
+                                    .getBeanDefinitions()
+                                    .stream()
+                                    .anyMatch(b -> b.getTypeMetadata().getRawName().equals(className))
+                    );
         });
+
         evaluators.put(ConditionType.ON_MISSING_BEAN, (def, factory) -> {
             val metadata = def.getMissingBeanConditionMetadata();
-            if (metadata == null) {
-                return true;
-            }
-            val requiredTypes = Arrays.asList(metadata.getClasses());
-            return requiredTypes.stream()
-                    .noneMatch(requiredType -> factory
-                            .getRegistry()
-                            .getBeanDefinitions()
-                            .stream()
-                            .filter(b -> !b.getId().equals(def.getId()))
-                            .anyMatch(factory.getRegistry().filterBeanDefinition(requiredType)));
+            return metadata != null && metadata.getClassNames().stream()
+                    .allMatch(className ->
+                            factory.getRegistry().getBeanDefinitions()
+                                    .stream()
+                                    .filter(b -> !b.getId().equals(def.getId()))
+                                    .noneMatch(b -> b.getTypeMetadata().getRawName().equals(className))
+                    );
         });
+
         evaluators.put(ConditionType.ON_PROPERTY, (def, factory) -> {
             val metadata = def.getPropertyConditionMetadata();
             if (metadata == null) return true;
@@ -63,9 +72,12 @@ public final class Evaluators {
             val value = env.process(metadata.getProperty().value(), metadata.getProperty().source(), String.class);
             return Objects.equals(value, metadata.getExpected());
         });
+
         evaluators.put(ConditionType.ON_ENVIRONMENT, (def, factory) -> {
             val environments = def.getEnvironments();
-            if (environments == null || environments.isEmpty() || (environments.size() == 1 && environments.get(0).equalsIgnoreCase("default"))) return true;
+            if (environments.isEmpty() || environments.size() == 1 && environments.get(0).equalsIgnoreCase(DEFAULT_PROFILE)) {
+                return true;
+            }
             val profilesActive = getActiveProfiles().apply(factory);
             for (String environment : environments) {
                 boolean negate = environment.startsWith("!");
@@ -76,11 +88,15 @@ public final class Evaluators {
             }
             return true;
         });
+
         evaluators.put(ConditionType.ON_ANNOTATION, (def, factory) -> {
             val metadata = def.getAnnotationConditionMetadata();
-            if (metadata == null) return true;
-            return Arrays.stream(metadata.getClasses()).noneMatch(a -> factory.getBeansWithAnnotation(a).isEmpty());
+            return metadata != null && Arrays.stream(metadata.getClasses())
+                    .allMatch(ann ->
+                            factory.getRegistry().getBeanDefinitions().stream()
+                                    .anyMatch(defn -> defn.getTypeMetadata().hasAnnotation(ann)));
         });
+
         return evaluators;
     }
 
@@ -92,15 +108,14 @@ public final class Evaluators {
         return factory -> ACTIVE_PROFILES_CACHE.computeIfAbsent(factory, f -> {
             val plugin = f.getBean(QuartzPlugin.class);
             val env = f.getBean(PropertyPostProcessor.class);
-            val profileInVariables = env
-                    .getEnvironmentVariables()
-                    .getOrDefault(String.format("%S_PLUGIN_PROFILES", plugin.getName().toUpperCase()), "default");
+            val profileInVariables = env.getEnvironmentVariables()
+                    .getOrDefault(plugin.getName().toUpperCase() + "_PLUGIN_PROFILES", DEFAULT_PROFILE);
             val profilesActive = Arrays.stream(profileInVariables.split(","))
                     .map(String::trim)
                     .filter(s -> !s.isEmpty())
                     .collect(Collectors.toCollection(ArrayList::new));
             if (profilesActive.isEmpty()) {
-                profilesActive.add("default");
+                profilesActive.add(DEFAULT_PROFILE);
             }
             return profilesActive;
         });

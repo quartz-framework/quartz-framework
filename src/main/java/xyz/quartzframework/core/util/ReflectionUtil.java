@@ -3,6 +3,7 @@ package xyz.quartzframework.core.util;
 import lombok.experimental.UtilityClass;
 import lombok.val;
 import org.pacesys.reflect.Reflect;
+import org.pacesys.reflect.types.Predicate;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -17,6 +18,12 @@ public class ReflectionUtil {
     public Set<Method> getMethods(Reflect.MethodType methodType, Class<?> clazz, Class<? extends Annotation>... annotations) {
         val methodFinder = Reflect.on(clazz).methods(methodType);
         val methods = methodFinder.annotatedWith(annotations);
+        return new HashSet<>(methods);
+    }
+
+    public Set<Method> getMethods(Reflect.MethodType methodType, Class<?> clazz, Predicate<Method> predicate) {
+        val methodFinder = Reflect.on(clazz).methods(methodType);
+        val methods = methodFinder.match(predicate);
         return new HashSet<>(methods);
     }
 

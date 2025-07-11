@@ -1,5 +1,7 @@
 package xyz.quartzframework.core.bean.annotation;
 
+import org.springframework.core.Ordered;
+
 import java.lang.annotation.*;
 
 @Retention(RetentionPolicy.RUNTIME)
@@ -7,6 +9,6 @@ import java.lang.annotation.*;
 @Documented
 public @interface Priority {
 
-    int value() default Integer.MAX_VALUE;
+    int value() default Ordered.HIGHEST_PRECEDENCE;
 
 }
