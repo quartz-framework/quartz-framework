@@ -196,7 +196,7 @@
 
     <profiles>
         <profile>
-            <id>release-parent</id>
+            <id>release</id>
             <build>
                 <plugins>
                     <plugin>
