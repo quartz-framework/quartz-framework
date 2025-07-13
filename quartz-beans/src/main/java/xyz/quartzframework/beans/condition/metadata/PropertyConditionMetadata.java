@@ -21,7 +21,7 @@ public class PropertyConditionMetadata {
         return metadata
                 .getAnnotation(ActivateWhenPropertyEquals.class)
                 .map(a -> {
-                    val p = a.getAttribute("property", Property.class);
+                    val p = a.getAttribute("value", Property.class);
                     val expect = a.getAttribute("expected", String.class);
                     return new PropertyConditionMetadata(p, expect);
                 })
