@@ -83,7 +83,10 @@ public final class Evaluators {
             val metadata = def.getPropertyConditionMetadata();
             if (metadata == null) return true;
             val env = factory.getBean(PropertyPostProcessor.class);
-            val value = env.process(metadata.getProperty().value(), metadata.getProperty().source(), String.class);
+            val property = metadata.getProperty();
+            val expression = property.getAttribute("value", String.class);
+            val source = property.getAttribute("source", String.class);
+            val value = env.process(expression, source, String.class);
             return Objects.equals(value, metadata.getExpected());
         });
 

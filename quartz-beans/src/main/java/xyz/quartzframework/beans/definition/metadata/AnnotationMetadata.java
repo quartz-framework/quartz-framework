@@ -38,6 +38,9 @@ public class AnnotationMetadata {
     public <T> T getAttribute(String key, Class<T> type) {
         Object value = attributes.get(key);
         if (value == null) return null;
+        if (Annotation.class.isAssignableFrom(type)) {
+            throw new IllegalStateException("Use getAnnotationAttribute for nested annotations.");
+        }
         if (type.isPrimitive()) {
             if (type == int.class && value instanceof Integer i) return (T) i;
             if (type == long.class && value instanceof Long l) return (T) l;
@@ -67,6 +70,17 @@ public class AnnotationMetadata {
             throw new IllegalArgumentException("Cannot cast annotation attribute '%s' to %s (was %s: %s)"
                     .formatted(key, type.getName(), value.getClass().getName(), value), e);
         }
+    }
+
+    public AnnotationMetadata getAnnotationAttribute(String key) {
+        Object value = attributes.get(key);
+        if (value instanceof AnnotationInfo ai) {
+            return AnnotationMetadata.of(ai, classLoader);
+        }
+        if (value instanceof Annotation ann) {
+            return AnnotationMetadata.of(ann, classLoader);
+        }
+        throw new IllegalArgumentException("Attribute '%s' is not an annotation".formatted(key));
     }
 
     private Class<?> resolveClass(String s) {
