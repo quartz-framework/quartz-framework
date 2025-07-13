@@ -15,6 +15,7 @@ import xyz.quartzframework.beans.definition.QuartzBeanDefinitionRegistry;
 import xyz.quartzframework.beans.definition.metadata.TypeMetadata;
 import xyz.quartzframework.beans.factory.QuartzBeanFactory;
 import xyz.quartzframework.beans.strategy.BeanNameStrategy;
+import xyz.quartzframework.beans.support.BeanInjector;
 import xyz.quartzframework.beans.support.BeanUtil;
 import xyz.quartzframework.stereotype.Configurer;
 
@@ -120,7 +121,14 @@ public abstract class AbstractQuartzContext<T> implements QuartzContext<T> {
                 (b) -> b.construct(getBeanFactory()));
         phase(QuartzBeanDefinition::isInitialized,
                 QuartzBeanDefinition::isInjected,
-                b -> b.triggerMethods(getBeanFactory(), (m) -> m.hasAnnotation(ContextLoads.class)));
+                b -> b.triggerMethods(getBeanFactory(), (m) -> {
+                    if (!m.isVoid()) {
+                        log.warn("Ignoring @ContextLoads method '{}' in '{}' – must return void.",
+                                m.getName(), b.getTypeMetadata().getFullName());
+                        return false;
+                    }
+                    return m.hasAnnotation(ContextLoads.class);
+                }));
         logStartupTime();
     }
 

@@ -15,7 +15,7 @@ import xyz.quartzframework.beans.strategy.DefaultBeanNameStrategy;
 import java.net.URLClassLoader;
 
 @RequiredArgsConstructor
-public abstract class QuartzApplicationBuilder<T, C extends AbstractQuartzContext<T>> {
+public abstract class QuartzContextBuilder<T, C extends AbstractQuartzContext<T>> {
 
     @Getter
     private final Class<? extends Quartz<T>> pluginClass;
@@ -33,27 +33,27 @@ public abstract class QuartzApplicationBuilder<T, C extends AbstractQuartzContex
 
     private QuartzBeanFactory beanFactory;
 
-    public QuartzApplicationBuilder<T, C> classLoader(URLClassLoader classLoader) {
+    public QuartzContextBuilder<T, C> classLoader(URLClassLoader classLoader) {
         this.classLoader = classLoader;
         return this;
     }
 
-    public QuartzApplicationBuilder<T, C> beanNameStrategy(BeanNameStrategy strategy) {
+    public QuartzContextBuilder<T, C> beanNameStrategy(BeanNameStrategy strategy) {
         this.beanNameStrategy = strategy;
         return this;
     }
 
-    public QuartzApplicationBuilder<T, C> beanFactory(QuartzBeanFactory factory) {
+    public QuartzContextBuilder<T, C> beanFactory(QuartzBeanFactory factory) {
         this.beanFactory = factory;
         return this;
     }
 
-    public QuartzApplicationBuilder<T, C> beanDefinitionRegistry(QuartzBeanDefinitionRegistry registry) {
+    public QuartzContextBuilder<T, C> beanDefinitionRegistry(QuartzBeanDefinitionRegistry registry) {
         this.beanDefinitionRegistry = registry;
         return this;
     }
 
-    public QuartzApplicationBuilder<T, C> beanDefinitionBuilder(QuartzBeanDefinitionBuilder builder) {
+    public QuartzContextBuilder<T, C> beanDefinitionBuilder(QuartzBeanDefinitionBuilder builder) {
         this.beanDefinitionBuilder = builder;
         return this;
     }
