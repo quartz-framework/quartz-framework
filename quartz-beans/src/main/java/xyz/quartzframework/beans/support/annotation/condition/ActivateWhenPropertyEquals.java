@@ -1,7 +1,5 @@
 package xyz.quartzframework.beans.support.annotation.condition;
 
-import xyz.quartzframework.config.Property;
-
 import java.lang.annotation.*;
 
 @Documented

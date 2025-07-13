@@ -93,7 +93,6 @@ public class DefaultBeanDefinitionRegistry implements QuartzBeanDefinitionRegist
     @Override
     public QuartzBeanDefinition getBeanDefinition(String beanName, TypeMetadata metadata) {
         return getBeanDefinitions()
-
                 .stream()
                 .filter(b -> b.getName().equals(beanName))
                 .filter(b -> b.getTypeMetadata().matches(metadata))
