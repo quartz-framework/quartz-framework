@@ -1,23 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>xyz.quartzframework</groupId>
-    <artifactId>quartz-core</artifactId>
+    <artifactId>quartz-framework</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
     <url>https://quartzframework.xyz</url>
     <inceptionYear>2023</inceptionYear>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <lombok.version>1.18.36</lombok.version>
-        <spring.version>6.2.3</spring.version>
-        <aspectj.version>1.9.7</aspectj.version>
-        <picocli.version>4.7.7</picocli.version>
-        <slf4j.version>2.0.17</slf4j.version>
-    </properties>
+    <modules>
+        <module>quartz-core</module>
+        <module>quartz-beans</module>
+        <module>quartz-context</module>
+        <module>quartz-data</module>
+        <module>quartz-tasks</module>
+        <module>quartz-config</module>
+        <module>quartz-async</module>
+        <module>quartz-plugin</module>
+        <module>quartz-cli</module>
+    </modules>
 
     <developers>
         <developer>
@@ -35,90 +38,106 @@
     </licenses>
 
     <scm>
-        <connection>scm:git:git://github.com/quartz-framework/quartz-core.git</connection>
-        <developerConnection>scm:git:ssh://github.com/quartz-framework/quartz-core.git</developerConnection>
-        <url>https://github.com/quartz-framework/quartz-core/tree/main</url>
+        <connection>scm:git:git://github.com/quartz-framework/quartz-starter.git</connection>
+        <developerConnection>scm:git:ssh://github.com/quartz-framework/quartz-starter.git</developerConnection>
+        <url>https://github.com/quartz-framework/quartz-starter/tree/main</url>
     </scm>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>info.picocli</groupId>
-            <artifactId>picocli</artifactId>
-            <version>${picocli.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.aspectj</groupId>
-            <artifactId>aspectjrt</artifactId>
-            <version>${aspectj.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.aspectj</groupId>
-            <artifactId>aspectjweaver</artifactId>
-            <version>${aspectj.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-aop</artifactId>
-            <version>${spring.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-beans</artifactId>
-            <version>${spring.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-core</artifactId>
-            <version>${spring.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-expression</artifactId>
-            <version>${spring.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.14.0</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-            <version>1.3.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.pacesys</groupId>
-            <artifactId>reflect</artifactId>
-            <version>1.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.classgraph</groupId>
-            <artifactId>classgraph</artifactId>
-            <version>4.8.154</version>
-        </dependency>
-        <dependency>
-            <groupId>com.cronutils</groupId>
-            <artifactId>cron-utils</artifactId>
-            <version>9.2.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.bspfsystems</groupId>
-            <artifactId>yamlconfiguration</artifactId>
-            <version>3.0.2</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
-        </dependency>
-    </dependencies>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <lombok.version>1.18.36</lombok.version>
+        <slf4j.version>2.0.17</slf4j.version>
+        <spring.version>6.2.3</spring.version>
+        <jakarta.version>2.1.1</jakarta.version>
+        <junit.version>5.10.2</junit.version>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>sonatype-central</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>xyz.quartzframework</groupId>
+                <artifactId>quartz-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>xyz.quartzframework</groupId>
+                <artifactId>quartz-config</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>xyz.quartzframework</groupId>
+                <artifactId>quartz-beans</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>xyz.quartzframework</groupId>
+                <artifactId>quartz-tasks</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>xyz.quartzframework</groupId>
+                <artifactId>quartz-async</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>xyz.quartzframework</groupId>
+                <artifactId>quartz-context</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>xyz.quartzframework</groupId>
+                <artifactId>quartz-plugin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>xyz.quartzframework</groupId>
+                <artifactId>quartz-data</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>xyz.quartzframework</groupId>
+                <artifactId>quartz-commands</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>3.14.0</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <finalName>${project.name}</finalName>
@@ -177,7 +196,7 @@
 
     <profiles>
         <profile>
-            <id>release</id>
+            <id>release-parent</id>
             <build>
                 <plugins>
                     <plugin>
@@ -208,7 +227,6 @@
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
-                            <autoPublish>true</autoPublish>
                         </configuration>
                     </plugin>
                 </plugins>
