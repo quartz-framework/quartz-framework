@@ -21,12 +21,6 @@ public interface Quartz<T> {
 
     void close();
 
-//    default void close() {
-//        val context = getContext();
-//        if (Objects.isNull(context)) return;
-//        context.close();
-//    }
-
     default void saveResource(String resourcePath, boolean replace) {
         if (resourcePath == null || resourcePath.isEmpty()) {
             throw new IllegalArgumentException("ResourcePath cannot be null or empty");
