@@ -9,8 +9,10 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ActivateWhenPropertyEquals {
 
-    Property value();
+    String expression();
 
     String expected();
+
+    String source() default "application";
 
 }
