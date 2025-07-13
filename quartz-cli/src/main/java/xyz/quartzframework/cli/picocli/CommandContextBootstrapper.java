@@ -1,6 +1,5 @@
 package xyz.quartzframework.cli.picocli;
 
-import xyz.quartzframework.cli.SubCommand;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -11,6 +10,7 @@ import xyz.quartzframework.beans.factory.QuartzBeanFactory;
 import xyz.quartzframework.beans.support.BeanInjector;
 import xyz.quartzframework.beans.support.annotation.Preferred;
 import xyz.quartzframework.beans.support.annotation.Provide;
+import xyz.quartzframework.cli.SubCommand;
 import xyz.quartzframework.common.Pair;
 import xyz.quartzframework.ordered.Priority;
 import xyz.quartzframework.stereotype.ContextBootstrapper;

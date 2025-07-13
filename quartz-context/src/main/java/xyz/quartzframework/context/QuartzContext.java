@@ -1,8 +1,8 @@
 package xyz.quartzframework.context;
 
-import xyz.quartzframework.aop.NoProxy;
 import xyz.quartzframework.Quartz;
 import xyz.quartzframework.QuartzPlugin;
+import xyz.quartzframework.aop.NoProxy;
 import xyz.quartzframework.beans.definition.QuartzBeanDefinitionBuilder;
 import xyz.quartzframework.beans.definition.QuartzBeanDefinitionRegistry;
 import xyz.quartzframework.beans.definition.metadata.TypeMetadata;

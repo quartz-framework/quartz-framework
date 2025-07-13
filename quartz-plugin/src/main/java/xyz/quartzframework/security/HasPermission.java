@@ -1,8 +1,8 @@
 package xyz.quartzframework.security;
 
 import org.springframework.core.annotation.AliasFor;
-import xyz.quartzframework.session.SenderSession;
 import xyz.quartzframework.exception.PermissionDeniedException;
+import xyz.quartzframework.session.SenderSession;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

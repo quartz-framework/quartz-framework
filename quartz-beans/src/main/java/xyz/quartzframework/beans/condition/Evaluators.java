@@ -32,14 +32,18 @@ public final class Evaluators {
 
         evaluators.put(ConditionType.ON_CLASS, (def, factory) -> {
             val metadata = def.getClassConditionMetadata();
-            return metadata != null && metadata.getClassNames().stream()
-                                .allMatch(n -> ClassUtil.isClassLoaded(n, factory.getClassLoader()));
+            return metadata != null && metadata
+                    .getClassNames()
+                    .stream()
+                    .allMatch(n -> ClassUtil.isClassLoaded(n, factory.getClassLoader()));
         });
 
         evaluators.put(ConditionType.ON_MISSING_CLASS, (def, factory) -> {
             val metadata = def.getMissingClassConditionMetadata();
-            return metadata != null && metadata.getClassNames().stream()
-                                .noneMatch(n -> ClassUtil.isClassLoaded(n, factory.getClassLoader()));
+            return metadata != null && metadata
+                    .getClassNames()
+                    .stream()
+                    .noneMatch(n -> ClassUtil.isClassLoaded(n, factory.getClassLoader()));
         });
 
         evaluators.put(ConditionType.ON_BEAN, (def, factory) -> {
@@ -85,20 +89,26 @@ public final class Evaluators {
                 boolean active = profilesActive.contains(profile);
                 if (negate && active) return false;
                 if (!negate && !active) return false;
+
+
             }
             return true;
         });
 
         evaluators.put(ConditionType.ON_ANNOTATION, (def, factory) -> {
             val metadata = def.getAnnotationConditionMetadata();
-            return metadata != null && Arrays.stream(metadata.getClasses())
-                    .allMatch(ann ->
-                            factory.getRegistry().getBeanDefinitions().stream()
-                                    .anyMatch(defn -> defn.getTypeMetadata().hasAnnotation(ann)));
+            if (metadata == null) return true;
+            val expectedAnnotations = Arrays.asList(metadata.getClasses());
+
+            return expectedAnnotations.stream().anyMatch(annotation ->
+                    factory.getRegistry()
+                            .getBeanDefinitions()
+                            .stream()
+                            .anyMatch(defn -> defn.getTypeMetadata().hasAnnotation(annotation))
+            );
         });
         return evaluators;
     }
-
 
     public Map<ConditionType, ConditionEvaluator> getEvaluators() {
         return EVALUATORS;

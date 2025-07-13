@@ -5,9 +5,9 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.lang.Nullable;
+import xyz.quartzframework.Quartz;
 import xyz.quartzframework.QuartzPlugin;
 import xyz.quartzframework.aop.NoProxy;
-import xyz.quartzframework.Quartz;
 import xyz.quartzframework.beans.condition.Evaluators;
 import xyz.quartzframework.beans.definition.QuartzBeanDefinition;
 import xyz.quartzframework.beans.definition.QuartzBeanDefinitionBuilder;
@@ -15,7 +15,6 @@ import xyz.quartzframework.beans.definition.QuartzBeanDefinitionRegistry;
 import xyz.quartzframework.beans.definition.metadata.TypeMetadata;
 import xyz.quartzframework.beans.factory.QuartzBeanFactory;
 import xyz.quartzframework.beans.strategy.BeanNameStrategy;
-import xyz.quartzframework.beans.support.BeanInjector;
 import xyz.quartzframework.beans.support.BeanUtil;
 import xyz.quartzframework.stereotype.Configurer;
 
@@ -209,8 +208,13 @@ public abstract class AbstractQuartzContext<T> implements QuartzContext<T> {
                 })
                 .map(metadata -> getBeanDefinitionBuilder().create(metadata))
                 .filter(Objects::nonNull)
-                .peek(injectable -> getBeanDefinitionRegistry().registerBeanDefinition(injectable.getName(), injectable))
+                .peek(definition -> getBeanDefinitionRegistry().registerBeanDefinition(definition.getName(), definition))
                 .forEach(definition -> definition.provideMethods(getBeanDefinitionRegistry(), getBeanDefinitionBuilder(), getBeanNameStrategy()));
+        getBeanDefinitionRegistry()
+                .getBeanDefinitions()
+                .stream()
+                .filter(def -> !def.isValid(getBeanFactory()))
+                .forEach(def -> getBeanDefinitionRegistry().unregisterBeanDefinition(def.getId()));
     }
 
     private void logActiveProfiles() {

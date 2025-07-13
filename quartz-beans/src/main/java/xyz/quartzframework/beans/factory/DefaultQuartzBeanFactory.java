@@ -32,6 +32,7 @@ public class DefaultQuartzBeanFactory implements QuartzBeanFactory {
     private static final ThreadLocal<Deque<QuartzBeanDefinition>> constructionStack =
             ThreadLocal.withInitial(ArrayDeque::new);
 
+
     @Getter
     private final URLClassLoader classLoader;
 
