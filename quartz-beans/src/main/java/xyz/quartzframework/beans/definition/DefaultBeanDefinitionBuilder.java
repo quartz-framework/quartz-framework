@@ -65,15 +65,6 @@ public class DefaultBeanDefinitionBuilder implements QuartzBeanDefinitionBuilder
     }
 
     private void validate(QuartzBeanDefinition beanDefinition) {
-//        val listenMethods = beanDefinition.getListenMethods();
-//        for (MethodMetadata listenMethod : listenMethods) {
-//            if (listenMethod.getParameterCount() != 1) {
-//                throw new LifecycleException("@Listen methods must have exactly one parameter");
-//            }
-//            if (!listenMethod.isVoid()) {
-//                throw new LifecycleException("@Listen methods must return void");
-//            }
-//        }
         val lifecycleMethods = beanDefinition.getLifecycleMethods();
         for (val methodInfo : lifecycleMethods) {
             if (methodInfo.getParameterCount() > 0) {

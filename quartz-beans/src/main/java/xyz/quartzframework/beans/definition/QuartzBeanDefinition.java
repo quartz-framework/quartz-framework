@@ -431,6 +431,7 @@ public class QuartzBeanDefinition implements BeanDefinition, Evaluate {
                     .internalBean(false)
                     .typeMetadata(metadata)
                     .methods(beanMethods)
+                    .delegate(this)
                     .order(builder.getOrder(metadata))
                     .preferred(builder.isPreferred(metadata))
                     .secondary(builder.isSecondary(metadata))
