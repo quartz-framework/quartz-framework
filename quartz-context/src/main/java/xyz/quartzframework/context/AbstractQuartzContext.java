@@ -63,7 +63,7 @@ public abstract class AbstractQuartzContext<T> implements QuartzContext<T> {
                                  @Nullable URLClassLoader classLoader) {
         synchronized (AbstractQuartzContext.class) {
             if (!pluginClass.isAnnotationPresent(QuartzPlugin.class)) {
-                throw new ContextInitializationException("Application class must be annotated with @QuartzApplication");
+                throw new ContextInitializationException("Application class must be annotated with @QuartzPlugin");
             }
             this.informationMetadata = pluginClass.getAnnotation(QuartzPlugin.class);
             this.beanFactory = beanFactory;
