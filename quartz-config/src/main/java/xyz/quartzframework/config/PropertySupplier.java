@@ -21,6 +21,6 @@ public class PropertySupplier<T> implements Supplier<T> {
 
     @Override
     public T get() {
-        return propertyPostProcessor.process(source, expression, clazz);
+        return propertyPostProcessor.process(expression, source, clazz);
     }
 }
