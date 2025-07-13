@@ -11,8 +11,8 @@ import org.springframework.core.Ordered;
 import org.springframework.core.ResolvableType;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
-import xyz.quartzframework.beans.condition.Evaluate;
 import xyz.quartzframework.beans.condition.BeanEvaluationMomentType;
+import xyz.quartzframework.beans.condition.Evaluate;
 import xyz.quartzframework.beans.condition.Evaluators;
 import xyz.quartzframework.beans.condition.metadata.*;
 import xyz.quartzframework.beans.definition.metadata.MethodMetadata;
@@ -156,7 +156,7 @@ public class QuartzBeanDefinition implements BeanDefinition, Evaluate {
         if (isInitialized() && isSingleton()) {
             return;
         }
-        if (instance == null) {
+        if (instance == null && quartzBeanFactory.getRegistry().containsBeanDefinition(typeMetadata)) {
             instance = quartzBeanFactory.getBean(name, typeMetadata.getType());
         }
         if (!isInjected()) {
@@ -374,7 +374,6 @@ public class QuartzBeanDefinition implements BeanDefinition, Evaluate {
                 case ON_ANNOTATION -> annotationConditionMetadata != null;
             };
             if (shouldEvaluate && canEvaluate && !evaluator.evaluate(this, factory)) {
-                log.info("Invalid bean: {} by condition {}", this.getName(), entry.getKey());
                 return true;
             }
         }
@@ -466,8 +465,12 @@ public class QuartzBeanDefinition implements BeanDefinition, Evaluate {
                 .stream()
                 .map(method -> {
                     val candidate = TypeMetadata.of(method);
+                    if (!registry.containsBeanDefinition(candidate)) {
+                        return null;
+                    }
                     return registry.getBeanDefinition(candidate);
                 })
+                .filter(Objects::nonNull)
                 .filter(d -> !d.isInternalBean())
                 .filter(d -> !d.isInjected())
                 .sorted(Comparator.comparingInt(QuartzBeanDefinition::getOrder).reversed())

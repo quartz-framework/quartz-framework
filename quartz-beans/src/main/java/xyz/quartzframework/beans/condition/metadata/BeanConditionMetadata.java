@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.val;
 import xyz.quartzframework.beans.definition.metadata.TypeMetadata;
-import xyz.quartzframework.beans.support.annotation.condition.ActivateWhenAnnotationPresent;
 import xyz.quartzframework.beans.support.annotation.condition.ActivateWhenBeanMissing;
 import xyz.quartzframework.beans.support.annotation.condition.ActivateWhenBeanPresent;
 

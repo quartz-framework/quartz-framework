@@ -10,6 +10,7 @@ import xyz.quartzframework.beans.factory.QuartzBeanFactory;
 import xyz.quartzframework.beans.strategy.BeanNameStrategy;
 import xyz.quartzframework.beans.support.exception.LifecycleException;
 
+import java.util.ArrayList;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -31,7 +32,7 @@ public class DefaultBeanDefinitionBuilder implements QuartzBeanDefinitionBuilder
                 .initialized(false)
                 .id(UUID.randomUUID())
                 .typeMetadata(metadata);
-        val methods = findMethods(metadata);
+        val methods = new ArrayList<>(findMethods(metadata));
         builder.name(generatedName);
         builder.aspect(isAspect(metadata));
         builder.configurer(isConfigurer(metadata));

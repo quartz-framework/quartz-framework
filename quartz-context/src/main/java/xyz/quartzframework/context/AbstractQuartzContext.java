@@ -82,6 +82,7 @@ public abstract class AbstractQuartzContext<T> implements QuartzContext<T> {
         performInitializationChecks();
         registerDefaultBeans();
         scanAndRegisterInjectables();
+        invalidateBeans();
         logActiveProfiles();
         phase(QuartzBeanDefinition::isConfigurer,
                 (b) ->
@@ -211,11 +212,18 @@ public abstract class AbstractQuartzContext<T> implements QuartzContext<T> {
                 .filter(Objects::nonNull)
                 .peek(definition -> getBeanDefinitionRegistry().registerBeanDefinition(definition.getName(), definition))
                 .forEach(definition -> definition.provideMethods(getBeanDefinitionRegistry(), getBeanDefinitionBuilder(), getBeanNameStrategy()));
+    }
+
+    private void invalidateBeans() {
+        val invalidated = new ArrayList<QuartzBeanDefinition>();
         getBeanDefinitionRegistry()
                 .getBeanDefinitions()
                 .stream()
                 .filter(def -> def.isInvalid(getBeanFactory(), BeanEvaluationMomentType.POST_REGISTRATION))
-                .forEach(def -> getBeanDefinitionRegistry().unregisterBeanDefinition(def.getId()));
+                .forEach(invalidated::add);
+        for (QuartzBeanDefinition o : invalidated) {
+            getBeanDefinitionRegistry().unregisterBeanDefinition(o.getId());
+        }
     }
 
     private void logActiveProfiles() {

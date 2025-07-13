@@ -115,6 +115,13 @@ public class DefaultBeanDefinitionRegistry implements QuartzBeanDefinitionRegist
     }
 
     @Override
+    public boolean containsBeanDefinition(TypeMetadata metadata) {
+        return getBeanDefinitions()
+                .stream()
+                .anyMatch(filterBeanDefinition(metadata));
+    }
+
+    @Override
     public void unregisterBeanDefinition(UUID id) {
         getBeanDefinitions().removeIf(bean -> {
             if (bean.getId().equals(id)) {

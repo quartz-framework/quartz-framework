@@ -1,6 +1,7 @@
 package xyz.quartzframework.beans.condition;
 
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import xyz.quartzframework.Quartz;
 import xyz.quartzframework.beans.factory.QuartzBeanFactory;
@@ -11,6 +12,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @UtilityClass
 public final class Evaluators {
 
@@ -112,7 +114,7 @@ public final class Evaluators {
                     factory.getRegistry()
                             .getBeanDefinitions()
                             .stream()
-                            .anyMatch(defn -> defn.getTypeMetadata().hasAnnotation(annotation))
+                            .anyMatch(definition -> definition.getTypeMetadata().hasAnnotation(annotation))
             );
         });
         return evaluators;
