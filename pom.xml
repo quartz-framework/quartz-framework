@@ -128,7 +128,7 @@
             </dependency>
             <dependency>
                 <groupId>xyz.quartzframework</groupId>
-                <artifactId>quartz-commands</artifactId>
+                <artifactId>quartz-cli</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
