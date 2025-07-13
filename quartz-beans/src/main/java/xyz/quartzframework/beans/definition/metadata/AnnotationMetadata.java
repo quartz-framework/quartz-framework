@@ -1,6 +1,8 @@
 package xyz.quartzframework.beans.definition.metadata;
 
-import io.github.classgraph.*;
+import io.github.classgraph.AnnotationClassRef;
+import io.github.classgraph.AnnotationInfo;
+import io.github.classgraph.AnnotationParameterValue;
 import lombok.*;
 import org.springframework.core.annotation.AliasFor;
 
@@ -228,6 +230,7 @@ public class AnnotationMetadata {
             Class<?> type = Class.forName(annotationType.getName(), false, classLoader);
             for (Annotation ann : type.getAnnotations()) {
                 if (ann.annotationType().getName().equals(name)) {
+
                     return (A) ann;
                 }
             }

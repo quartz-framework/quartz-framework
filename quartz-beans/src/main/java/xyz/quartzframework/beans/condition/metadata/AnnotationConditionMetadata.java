@@ -17,6 +17,9 @@ public class AnnotationConditionMetadata {
     private Class<? extends Annotation>[] classes;
 
     public static AnnotationConditionMetadata of(TypeMetadata metadata) {
+        if (!metadata.hasAnnotation(ActivateWhenAnnotationPresent.class)) {
+            return null;
+        }
         val value = metadata
                 .getAnnotation(ActivateWhenAnnotationPresent.class)
                 .map(a -> a.getAttribute("value", Class[].class))

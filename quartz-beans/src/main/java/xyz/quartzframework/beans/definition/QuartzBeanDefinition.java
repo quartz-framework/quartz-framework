@@ -3,6 +3,7 @@ package xyz.quartzframework.beans.definition;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
@@ -10,6 +11,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.ResolvableType;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
+import xyz.quartzframework.beans.condition.BeanEvaluationMomentType;
 import xyz.quartzframework.beans.condition.Evaluate;
 import xyz.quartzframework.beans.condition.Evaluators;
 import xyz.quartzframework.beans.condition.metadata.*;
@@ -25,6 +27,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Getter
 @Builder(builderClassName = "PluginBeanDefinitionCreator")
 @ToString
@@ -153,7 +156,7 @@ public class QuartzBeanDefinition implements BeanDefinition, Evaluate {
         if (isInitialized() && isSingleton()) {
             return;
         }
-        if (instance == null) {
+        if (instance == null && quartzBeanFactory.getRegistry().containsBeanDefinition(typeMetadata)) {
             instance = quartzBeanFactory.getBean(name, typeMetadata.getType());
         }
         if (!isInjected()) {
@@ -355,10 +358,11 @@ public class QuartzBeanDefinition implements BeanDefinition, Evaluate {
 
     }
 
-    public boolean isValid(QuartzBeanFactory factory) {
+    public boolean isInvalid(QuartzBeanFactory factory, BeanEvaluationMomentType evaluationMomentType) {
         for (val entry : Evaluate.getEvaluators().entrySet()) {
             val type = entry.getKey();
             val evaluator = entry.getValue();
+            val canEvaluate = type.getEvaluationMomentType().equals(evaluationMomentType);
             boolean shouldEvaluate = switch (type) {
                 case CONDITIONAL -> genericConditionMetadata != null;
                 case ON_CLASS -> classConditionMetadata != null;
@@ -369,11 +373,11 @@ public class QuartzBeanDefinition implements BeanDefinition, Evaluate {
                 case ON_ENVIRONMENT -> environments != null && !environments.isEmpty();
                 case ON_ANNOTATION -> annotationConditionMetadata != null;
             };
-            if (shouldEvaluate && !evaluator.evaluate(this, factory)) {
-                return false;
+            if (shouldEvaluate && canEvaluate && !evaluator.evaluate(this, factory)) {
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     public List<MethodMetadata> getProvideMethods() {
@@ -461,8 +465,12 @@ public class QuartzBeanDefinition implements BeanDefinition, Evaluate {
                 .stream()
                 .map(method -> {
                     val candidate = TypeMetadata.of(method);
+                    if (!registry.containsBeanDefinition(candidate)) {
+                        return null;
+                    }
                     return registry.getBeanDefinition(candidate);
                 })
+                .filter(Objects::nonNull)
                 .filter(d -> !d.isInternalBean())
                 .filter(d -> !d.isInjected())
                 .sorted(Comparator.comparingInt(QuartzBeanDefinition::getOrder).reversed())

@@ -8,6 +8,7 @@ import xyz.quartzframework.beans.definition.metadata.TypeMetadata;
 import xyz.quartzframework.beans.support.annotation.condition.ActivateWhenClassMissing;
 import xyz.quartzframework.beans.support.annotation.condition.ActivateWhenClassPresent;
 
+import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -19,7 +20,10 @@ public class ClassConditionMetadata {
 
     private Set<String> classNames;
 
-    public static ClassConditionMetadata of(TypeMetadata metadata, Class<?> conditionType) {
+    public static ClassConditionMetadata of(TypeMetadata metadata, Class<? extends Annotation> conditionType) {
+        if (!metadata.hasAnnotation(conditionType)) {
+            return null;
+        }
         return metadata.getAnnotation(conditionType.getName())
                 .map(annotation -> {
                     Set<String> result = new HashSet<>();

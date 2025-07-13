@@ -3,7 +3,6 @@ package xyz.quartzframework.data;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
-import xyz.quartzframework.ordered.Priority;
 import xyz.quartzframework.beans.factory.QuartzBeanFactory;
 import xyz.quartzframework.beans.support.annotation.Provide;
 import xyz.quartzframework.beans.support.annotation.condition.ActivateWhenBeanMissing;
@@ -16,6 +15,7 @@ import xyz.quartzframework.data.query.CompositeQueryParser;
 import xyz.quartzframework.data.query.MethodQueryParser;
 import xyz.quartzframework.data.query.QQLQueryParser;
 import xyz.quartzframework.data.storage.*;
+import xyz.quartzframework.ordered.Priority;
 import xyz.quartzframework.stereotype.Configurer;
 
 import java.net.URLClassLoader;

@@ -8,6 +8,7 @@ import xyz.quartzframework.beans.definition.metadata.TypeMetadata;
 import xyz.quartzframework.beans.support.annotation.condition.ActivateWhenBeanMissing;
 import xyz.quartzframework.beans.support.annotation.condition.ActivateWhenBeanPresent;
 
+import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -31,7 +32,10 @@ public class BeanConditionMetadata {
         return new BeanConditionMetadata(classes);
     }
 
-    public static BeanConditionMetadata of(TypeMetadata metadata, Class<?> conditionType) {
+    public static BeanConditionMetadata of(TypeMetadata metadata, Class<? extends Annotation> conditionType) {
+        if (!metadata.hasAnnotation(conditionType)) {
+            return null;
+        }
         return metadata.getAnnotation(conditionType.getName())
                 .map(annotation -> {
                     Class<?>[] value = annotation.getAttribute("value", Class[].class);

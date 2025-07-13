@@ -1,6 +1,7 @@
 package xyz.quartzframework.beans.condition;
 
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import xyz.quartzframework.Quartz;
 import xyz.quartzframework.beans.factory.QuartzBeanFactory;
@@ -11,6 +12,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @UtilityClass
 public final class Evaluators {
 
@@ -27,41 +29,53 @@ public final class Evaluators {
 
         evaluators.put(ConditionType.CONDITIONAL, (def, factory) -> {
             val cond = def.getGenericConditionMetadata();
-            return cond != null && factory.getBean(cond.getValue()).test();
+            if (cond == null) return true;
+            return factory.getBean(cond.getValue()).test();
         });
 
         evaluators.put(ConditionType.ON_CLASS, (def, factory) -> {
             val metadata = def.getClassConditionMetadata();
-            return metadata != null && metadata.getClassNames().stream()
-                                .allMatch(n -> ClassUtil.isClassLoaded(n, factory.getClassLoader()));
+            if (metadata == null) return true;
+            return metadata
+                    .getClassNames()
+                    .stream()
+                    .allMatch(n -> ClassUtil.isClassLoaded(n, factory.getClassLoader()));
         });
 
         evaluators.put(ConditionType.ON_MISSING_CLASS, (def, factory) -> {
             val metadata = def.getMissingClassConditionMetadata();
-            return metadata != null && metadata.getClassNames().stream()
-                                .noneMatch(n -> ClassUtil.isClassLoaded(n, factory.getClassLoader()));
+            if (metadata == null) return true;
+            return metadata
+                    .getClassNames()
+                    .stream()
+                    .noneMatch(n -> ClassUtil.isClassLoaded(n, factory.getClassLoader()));
         });
 
         evaluators.put(ConditionType.ON_BEAN, (def, factory) -> {
             val metadata = def.getBeanConditionMetadata();
-            return metadata != null && metadata.getClassNames()
+            if (metadata == null) return true;
+            return metadata.getClassNames()
                     .stream()
                     .allMatch(className ->
                             factory.getRegistry()
                                     .getBeanDefinitions()
                                     .stream()
-                                    .anyMatch(b -> b.getTypeMetadata().getRawName().equals(className))
+                                    .anyMatch(b -> b.getTypeMetadata().getRawName().equals(className) ||
+                                            b.getTypeMetadata().getFullName().equals(className))
                     );
         });
 
         evaluators.put(ConditionType.ON_MISSING_BEAN, (def, factory) -> {
             val metadata = def.getMissingBeanConditionMetadata();
-            return metadata != null && metadata.getClassNames().stream()
+            if (metadata == null) return true;
+            return metadata.getClassNames().stream()
                     .allMatch(className ->
-                            factory.getRegistry().getBeanDefinitions()
+                            factory.getRegistry()
+                                    .getBeanDefinitions()
                                     .stream()
                                     .filter(b -> !b.getId().equals(def.getId()))
-                                    .noneMatch(b -> b.getTypeMetadata().getRawName().equals(className))
+                                    .noneMatch(b -> b.getTypeMetadata().getRawName().equals(className) ||
+                                            b.getTypeMetadata().getFullName().equals(className))
                     );
         });
 
@@ -85,26 +99,32 @@ public final class Evaluators {
                 boolean active = profilesActive.contains(profile);
                 if (negate && active) return false;
                 if (!negate && !active) return false;
+
+
             }
             return true;
         });
 
         evaluators.put(ConditionType.ON_ANNOTATION, (def, factory) -> {
             val metadata = def.getAnnotationConditionMetadata();
-            return metadata != null && Arrays.stream(metadata.getClasses())
-                    .allMatch(ann ->
-                            factory.getRegistry().getBeanDefinitions().stream()
-                                    .anyMatch(defn -> defn.getTypeMetadata().hasAnnotation(ann)));
+            if (metadata == null) return true;
+            val expectedAnnotations = Arrays.asList(metadata.getClasses());
+
+            return expectedAnnotations.stream().anyMatch(annotation ->
+                    factory.getRegistry()
+                            .getBeanDefinitions()
+                            .stream()
+                            .anyMatch(definition -> definition.getTypeMetadata().hasAnnotation(annotation))
+            );
         });
         return evaluators;
     }
-
 
     public Map<ConditionType, ConditionEvaluator> getEvaluators() {
         return EVALUATORS;
     }
 
-public Function<QuartzBeanFactory, List<String>> getActiveProfiles() {
+    public Function<QuartzBeanFactory, List<String>> getActiveProfiles() {
         return factory -> ACTIVE_PROFILES_CACHE.computeIfAbsent(factory, f -> {
             val quartz = f.getBean(Quartz.class);
             val env = f.getBean(PropertyPostProcessor.class);

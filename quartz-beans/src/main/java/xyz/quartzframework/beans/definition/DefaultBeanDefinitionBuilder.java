@@ -3,12 +3,14 @@ package xyz.quartzframework.beans.definition;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.springframework.lang.Nullable;
+import xyz.quartzframework.beans.condition.BeanEvaluationMomentType;
 import xyz.quartzframework.beans.condition.metadata.*;
 import xyz.quartzframework.beans.definition.metadata.TypeMetadata;
 import xyz.quartzframework.beans.factory.QuartzBeanFactory;
 import xyz.quartzframework.beans.strategy.BeanNameStrategy;
 import xyz.quartzframework.beans.support.exception.LifecycleException;
 
+import java.util.ArrayList;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -30,7 +32,7 @@ public class DefaultBeanDefinitionBuilder implements QuartzBeanDefinitionBuilder
                 .initialized(false)
                 .id(UUID.randomUUID())
                 .typeMetadata(metadata);
-        val methods = findMethods(metadata);
+        val methods = new ArrayList<>(findMethods(metadata));
         builder.name(generatedName);
         builder.aspect(isAspect(metadata));
         builder.configurer(isConfigurer(metadata));
@@ -57,7 +59,7 @@ public class DefaultBeanDefinitionBuilder implements QuartzBeanDefinitionBuilder
         builder.genericConditionMetadata(GenericConditionMetadata.of(metadata));
         builder.internalBean(!external);
         val build = builder.build();
-        if (!build.isValid(quartzBeanFactory)) {
+        if (build.isInvalid(quartzBeanFactory, BeanEvaluationMomentType.PRE_REGISTRATION)) {
             return null;
         }
         validate(build);

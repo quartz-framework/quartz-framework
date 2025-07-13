@@ -27,6 +27,8 @@ public interface QuartzBeanDefinitionRegistry extends BeanDefinitionRegistry {
 
     boolean containsBeanDefinition(String beanName, TypeMetadata metadata);
 
+    boolean containsBeanDefinition(TypeMetadata metadata);
+
     @Override
     void registerBeanDefinition(@NonNull String beanName, @NonNull BeanDefinition beanDefinition);
 
