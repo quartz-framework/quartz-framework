@@ -8,6 +8,7 @@ import org.springframework.lang.Nullable;
 import xyz.quartzframework.Quartz;
 import xyz.quartzframework.QuartzPlugin;
 import xyz.quartzframework.aop.NoProxy;
+import xyz.quartzframework.beans.condition.BeanEvaluationMomentType;
 import xyz.quartzframework.beans.condition.Evaluators;
 import xyz.quartzframework.beans.definition.QuartzBeanDefinition;
 import xyz.quartzframework.beans.definition.QuartzBeanDefinitionBuilder;
@@ -213,7 +214,7 @@ public abstract class AbstractQuartzContext<T> implements QuartzContext<T> {
         getBeanDefinitionRegistry()
                 .getBeanDefinitions()
                 .stream()
-                .filter(def -> !def.isValid(getBeanFactory()))
+                .filter(def -> def.isInvalid(getBeanFactory(), BeanEvaluationMomentType.POST_REGISTRATION))
                 .forEach(def -> getBeanDefinitionRegistry().unregisterBeanDefinition(def.getId()));
     }
 

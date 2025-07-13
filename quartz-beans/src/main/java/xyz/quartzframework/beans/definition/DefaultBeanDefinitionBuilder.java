@@ -3,6 +3,7 @@ package xyz.quartzframework.beans.definition;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.springframework.lang.Nullable;
+import xyz.quartzframework.beans.condition.BeanEvaluationMomentType;
 import xyz.quartzframework.beans.condition.metadata.*;
 import xyz.quartzframework.beans.definition.metadata.TypeMetadata;
 import xyz.quartzframework.beans.factory.QuartzBeanFactory;
@@ -57,7 +58,7 @@ public class DefaultBeanDefinitionBuilder implements QuartzBeanDefinitionBuilder
         builder.genericConditionMetadata(GenericConditionMetadata.of(metadata));
         builder.internalBean(!external);
         val build = builder.build();
-        if (!build.isValid(quartzBeanFactory)) {
+        if (build.isInvalid(quartzBeanFactory, BeanEvaluationMomentType.PRE_REGISTRATION)) {
             return null;
         }
         validate(build);
