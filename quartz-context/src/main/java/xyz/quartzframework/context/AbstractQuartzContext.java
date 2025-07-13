@@ -122,12 +122,15 @@ public abstract class AbstractQuartzContext<T> implements QuartzContext<T> {
         phase(QuartzBeanDefinition::isInitialized,
                 QuartzBeanDefinition::isInjected,
                 b -> b.triggerMethods(getBeanFactory(), (m) -> {
+                    if (!m.hasAnnotation(ContextLoads.class)) {
+                        return false;
+                    }
                     if (!m.isVoid()) {
                         log.warn("Ignoring @ContextLoads method '{}' in '{}' – must return void.",
                                 m.getName(), b.getTypeMetadata().getFullName());
                         return false;
                     }
-                    return m.hasAnnotation(ContextLoads.class);
+                    return true;
                 }));
         logStartupTime();
     }

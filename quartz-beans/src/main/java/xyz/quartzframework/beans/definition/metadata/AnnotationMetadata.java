@@ -1,8 +1,6 @@
 package xyz.quartzframework.beans.definition.metadata;
 
-import io.github.classgraph.AnnotationClassRef;
-import io.github.classgraph.AnnotationInfo;
-import io.github.classgraph.AnnotationParameterValue;
+import io.github.classgraph.*;
 import lombok.*;
 import org.springframework.core.annotation.AliasFor;
 
@@ -11,6 +9,7 @@ import java.lang.reflect.Method;
 import java.net.URLClassLoader;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Getter
 @Builder
@@ -51,15 +50,11 @@ public class AnnotationMetadata {
         }
         if (type == Class[].class) {
             if (value instanceof Class[]) return (T) value;
-            if (value instanceof String s) {
-                return (T) new Class[]{ resolveClass(s) };
-            }
-            if (value instanceof String[] sa) {
+            if (value instanceof String s) return (T) new Class[]{ resolveClass(s) };
+            if (value instanceof String[] sa)
                 return (T) Arrays.stream(sa).map(this::resolveClass).toArray(Class[]::new);
-            }
-            if (value instanceof Object[] arr) {
+            if (value instanceof Object[] arr)
                 return (T) Arrays.stream(arr).map(this::resolveToClass).toArray(Class[]::new);
-            }
         }
         if (type.isEnum() && value instanceof String s) {
             return (T) Enum.valueOf((Class<? extends Enum>) type.asSubclass(Enum.class), s);
@@ -153,13 +148,18 @@ public class AnnotationMetadata {
     public static List<AnnotationMetadata> resolve(AnnotationInfo annotationInfo, URLClassLoader classLoader, Set<String> visited) {
         if (visited.contains(annotationInfo.getName())) return List.of();
         visited.add(annotationInfo.getName());
+
+        val current = AnnotationMetadata.of(annotationInfo, classLoader);
         val metadataList = new ArrayList<AnnotationMetadata>();
-        metadataList.add(AnnotationMetadata.of(annotationInfo, classLoader));
+        metadataList.add(current);
+
         val annotationClassInfo = annotationInfo.getClassInfo();
         if (annotationClassInfo != null) {
             val metaAnnotations = annotationClassInfo.getAnnotationInfo();
             for (val meta : metaAnnotations) {
-                metadataList.addAll(resolve(meta, classLoader, visited));
+                if (!isDeclaredOnlyAsAttribute(current, meta)) {
+                    metadataList.addAll(resolve(meta, classLoader, visited));
+                }
             }
         }
         return metadataList;
@@ -171,12 +171,40 @@ public class AnnotationMetadata {
         if (!visited.add(fqName)) return List.of();
         val current = of(annotation, classLoader);
         val metas = Arrays.stream(annotationType.getAnnotations())
+                .filter(a -> !isDeclaredOnlyAsAttribute(current, a.annotationType().getName()))
                 .flatMap(a -> resolve(a, classLoader, visited).stream())
                 .toList();
         val combined = new ArrayList<AnnotationMetadata>();
         combined.add(current);
         combined.addAll(metas);
         return combined;
+    }
+
+    private static boolean isDeclaredOnlyAsAttribute(AnnotationMetadata current, AnnotationInfo candidate) {
+        return current.getAttributes()
+                .values()
+                .stream()
+                .flatMap(AnnotationMetadata::flattenPossibleAnnotationClassRefs)
+                .anyMatch(name -> name.equals(candidate.getName()));
+    }
+
+    private static boolean isDeclaredOnlyAsAttribute(AnnotationMetadata current, String candidateName) {
+        return current.getAttributes()
+                .values()
+                .stream()
+                .flatMap(AnnotationMetadata::flattenPossibleAnnotationClassRefs)
+                .anyMatch(name -> name.equals(candidateName));
+    }
+
+    private static Stream<String> flattenPossibleAnnotationClassRefs(Object val) {
+        if (val instanceof Class<?> cls) return Stream.of(cls.getName());
+        if (val instanceof String s && s.endsWith(".class")) return Stream.of(s.replace(".class", ""));
+        if (val instanceof AnnotationClassRef acr) return Stream.of(acr.getName());
+        if (val instanceof Object[] arr) {
+            return Arrays.stream(arr)
+                    .flatMap(o -> flattenPossibleAnnotationClassRefs(o).distinct());
+        }
+        return Stream.empty();
     }
 
     private static Map<String, String> resolveAliases(Class<? extends Annotation> annotationType) {

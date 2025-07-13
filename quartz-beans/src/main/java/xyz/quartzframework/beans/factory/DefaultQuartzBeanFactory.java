@@ -262,6 +262,7 @@ public class DefaultQuartzBeanFactory implements QuartzBeanFactory {
     }
 
     @NonNull
+
     @Override
     public <A extends Annotation> Set<A> findAllAnnotationsOnBean(@NonNull String beanName, @NonNull Class<A> annotationType, boolean allowFactoryBeanInit) throws NoSuchBeanDefinitionException {
         val def = registry

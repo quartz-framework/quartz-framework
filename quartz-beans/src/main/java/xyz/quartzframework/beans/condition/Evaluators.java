@@ -96,9 +96,9 @@ public final class Evaluators {
                             factory.getRegistry().getBeanDefinitions().stream()
                                     .anyMatch(defn -> defn.getTypeMetadata().hasAnnotation(ann)));
         });
-
         return evaluators;
     }
+
 
     public Map<ConditionType, ConditionEvaluator> getEvaluators() {
         return EVALUATORS;
