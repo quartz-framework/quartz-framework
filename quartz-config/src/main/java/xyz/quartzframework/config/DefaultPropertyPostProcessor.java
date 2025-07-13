@@ -1,12 +1,14 @@
 package xyz.quartzframework.config;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.core.convert.ConversionService;
 
 import java.util.Map;
 import java.util.regex.Pattern;
 
+@Slf4j
 @RequiredArgsConstructor
 public class DefaultPropertyPostProcessor implements PropertyPostProcessor {
 
@@ -24,25 +26,38 @@ public class DefaultPropertyPostProcessor implements PropertyPostProcessor {
         }
         val key = matcher.group(1);
         val fallback = matcher.group(2);
+        log.trace("Processing property: '{}', extracted key='{}', fallback='{}'", match, key, fallback);
         val propertySource = propertySourceFactory.get(source);
         propertySource.reload();
-        val sourceValue = propertySource.getString(key);
+
+        val rawValue = propertySource.get(key);
+        val sourceValue = conversionService.convert(rawValue, String.class);
+
+        log.trace("Resolved key='{}' from source='{}': raw='{}', string='{}'", key, source, rawValue, sourceValue);
+
         if (sourceValue != null) {
             val isEnv = ENV_VAR_PATTERN.matcher(sourceValue).matches();
             if (isEnv) {
+                log.trace("Nested environment-like value detected: '{}', reprocessing...", sourceValue);
                 return process(sourceValue, source, type);
             }
-            return conversionService.convert(sourceValue, type);
+            T converted = conversionService.convert(sourceValue, type);
+            log.trace("Converted value='{}' to type '{}': {}", sourceValue, type.getSimpleName(), converted);
+            return converted;
         }
-        val environmentVariableValue = getEnvironmentVariables().get(key);
-        if (environmentVariableValue != null) {
-            return conversionService.convert(environmentVariableValue, type);
+        val envValue = getEnvironmentVariables().get(key);
+        if (envValue != null) {
+            log.trace("Resolved key='{}' from environment variable: '{}'", key, envValue);
+            return conversionService.convert(envValue, type);
         }
-        val systemPropertyValue = System.getProperty(key);
-        if (systemPropertyValue != null) {
-            return conversionService.convert(systemPropertyValue, type);
+        val systemPropValue = System.getProperty(key);
+        if (systemPropValue != null) {
+            log.trace("Resolved key='{}' from system property: '{}'", key, systemPropValue);
+            return conversionService.convert(systemPropValue, type);
         }
+
         if (fallback != null) {
+            log.trace("Using fallback for key='{}': '{}'", key, fallback);
             return conversionService.convert(fallback, type);
         }
         throw new IllegalArgumentException("Could not find property: " + key);
