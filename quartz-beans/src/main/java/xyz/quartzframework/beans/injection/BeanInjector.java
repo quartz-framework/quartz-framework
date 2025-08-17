@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.DependencyDescriptor;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
-import xyz.quartzframework.Inject;
+import xyz.quartzframework.beans.Inject;
 import xyz.quartzframework.beans.factory.QuartzBeanFactory;
 import xyz.quartzframework.beans.support.BeanProvider;
 import xyz.quartzframework.beans.support.BeanUtil;
