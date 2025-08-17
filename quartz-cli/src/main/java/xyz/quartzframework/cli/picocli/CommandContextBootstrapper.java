@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.springframework.core.annotation.AnnotationUtils;
 import picocli.CommandLine;
-import xyz.quartzframework.beans.Inject;
 import xyz.quartzframework.aop.NoProxy;
 import xyz.quartzframework.beans.factory.QuartzBeanFactory;
 import xyz.quartzframework.beans.injection.BeanInjector;
@@ -24,7 +23,7 @@ import java.util.stream.Collectors;
 
 @NoProxy
 @ContextBootstrapper
-@RequiredArgsConstructor(onConstructor = @__(@Inject))
+@RequiredArgsConstructor
 public class CommandContextBootstrapper {
 
     private final Map<String, Pair<Object, Map<String, Object>>> commands = new HashMap<>();
