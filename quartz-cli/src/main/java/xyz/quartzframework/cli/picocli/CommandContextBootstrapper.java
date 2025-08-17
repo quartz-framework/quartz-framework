@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.springframework.core.annotation.AnnotationUtils;
 import picocli.CommandLine;
-import xyz.quartzframework.Inject;
+import xyz.quartzframework.beans.Inject;
 import xyz.quartzframework.aop.NoProxy;
 import xyz.quartzframework.beans.factory.QuartzBeanFactory;
 import xyz.quartzframework.beans.injection.BeanInjector;
