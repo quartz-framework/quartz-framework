@@ -14,8 +14,8 @@ import org.springframework.lang.NonNull;
 import xyz.quartzframework.aop.NoProxy;
 import xyz.quartzframework.beans.definition.QuartzBeanDefinition;
 import xyz.quartzframework.beans.definition.QuartzBeanDefinitionRegistry;
+import xyz.quartzframework.beans.injection.BeanInjector;
 import xyz.quartzframework.beans.strategy.BeanNameStrategy;
-import xyz.quartzframework.beans.support.BeanInjector;
 import xyz.quartzframework.beans.support.BeanProvider;
 
 import java.lang.annotation.Annotation;
