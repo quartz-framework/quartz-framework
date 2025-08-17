@@ -1,4 +1,4 @@
-package xyz.quartzframework.beans.support;
+package xyz.quartzframework.beans.injection;
 
 import lombok.SneakyThrows;
 import lombok.experimental.UtilityClass;
@@ -7,10 +7,15 @@ import lombok.val;
 import org.pacesys.reflect.Reflect;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
+import org.springframework.beans.factory.InjectionPoint;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.DependencyDescriptor;
+import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
 import xyz.quartzframework.Inject;
 import xyz.quartzframework.beans.factory.QuartzBeanFactory;
+import xyz.quartzframework.beans.support.BeanProvider;
+import xyz.quartzframework.beans.support.BeanUtil;
 import xyz.quartzframework.beans.support.exception.BeanCreationException;
 import xyz.quartzframework.config.Property;
 import xyz.quartzframework.config.PropertyPostProcessor;
@@ -19,6 +24,7 @@ import xyz.quartzframework.util.CollectionUtil;
 import xyz.quartzframework.util.ReflectionUtil;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.*;
@@ -51,29 +57,30 @@ public class BeanInjector {
             val parameter = parameters[i];
             val type = parameter.getType();
             val value = parameter.getAnnotation(Property.class);
-            if (value != null) {
+            if (isInjectionPoint(type)) {
+                val methodParameter = new MethodParameter(selectedConstructor, i);
+                constructorParameterInstances[i] = createInjectionPoint(methodParameter);
+            } else if (value != null) {
                 constructorParameterInstances[i] = resolveProperty(quartzBeanFactory, parameter.getParameterizedType(), value);
             } else {
-                Object obj;
-                val beanProviderInstance = resolveBeanProviderDependency(quartzBeanFactory, parameter.getParameterizedType());
-                if (beanProviderInstance != null) {
-                    obj = beanProviderInstance;
-                } else {
-                    val collectionInstance = resolveCollectionDependency(quartzBeanFactory, type, parameter.getParameterizedType());
-                    if (collectionInstance != null) {
-                        obj = collectionInstance;
-                    } else {
+                final var mp = new MethodParameter(selectedConstructor, i);
+                constructorParameterInstances[i] =
+                    InjectionPointHelper.withInjectionPoint(mp, requiredFrom(mp), () -> {
+                        val beanProviderInstance = resolveBeanProviderDependency(quartzBeanFactory, parameter.getParameterizedType());
+                        if (beanProviderInstance != null) return beanProviderInstance;
+
+                        val collectionInstance = resolveCollectionDependency(quartzBeanFactory, type, parameter.getParameterizedType());
+                        if (collectionInstance != null) return collectionInstance;
+
                         val namedInstance = BeanUtil.getNamedInstance(parameter);
                         if (namedInstance != null && !namedInstance.isEmpty() && quartzBeanFactory.containsBean(namedInstance)) {
-                            obj = quartzBeanFactory.getBean(namedInstance, type);
+                            return quartzBeanFactory.getBean(namedInstance, type);
                         } else if (quartzBeanFactory.containsBean(parameter.getName())) {
-                            obj = quartzBeanFactory.getBean(parameter.getName(), type);
+                            return quartzBeanFactory.getBean(parameter.getName(), type);
                         } else {
-                            obj = quartzBeanFactory.getBean(type);
+                            return quartzBeanFactory.getBean(type);
                         }
-                    }
-                }
-                constructorParameterInstances[i] = obj;
+                    });
             }
         }
         return (T) selectedConstructor.newInstance(constructorParameterInstances);
@@ -89,29 +96,30 @@ public class BeanInjector {
             val parameter = parameters[i];
             val type = parameter.getType();
             val value = parameter.getAnnotation(Property.class);
-            if (value != null) {
+            if (isInjectionPoint(type)) {
+                val methodParameter = new MethodParameter(method, i);
+                parameterInstances[i] = createInjectionPoint(methodParameter);
+            } else if (value != null) {
                 parameterInstances[i] = resolveProperty(quartzBeanFactory, parameter.getParameterizedType(), value);
             } else {
-                Object obj;
-                val beanProviderInstance = resolveBeanProviderDependency(quartzBeanFactory, parameter.getParameterizedType());
-                if (beanProviderInstance != null) {
-                    obj = beanProviderInstance;
-                } else {
-                    val collectionInstance = resolveCollectionDependency(quartzBeanFactory, type, parameter.getParameterizedType());
-                    if (collectionInstance != null) {
-                        obj = collectionInstance;
-                    } else {
+                final var mp = new MethodParameter(method, i);
+                parameterInstances[i] =
+                    InjectionPointHelper.withInjectionPoint(mp, requiredFrom(mp), () -> {
+                        val beanProviderInstance = resolveBeanProviderDependency(quartzBeanFactory, parameter.getParameterizedType());
+                        if (beanProviderInstance != null) return beanProviderInstance;
+
+                        val collectionInstance = resolveCollectionDependency(quartzBeanFactory, type, parameter.getParameterizedType());
+                        if (collectionInstance != null) return collectionInstance;
+
                         val namedInstance = BeanUtil.getNamedInstance(parameter);
                         if (namedInstance != null && !namedInstance.isEmpty() && quartzBeanFactory.containsBean(namedInstance)) {
-                            obj = quartzBeanFactory.getBean(namedInstance, type);
+                            return quartzBeanFactory.getBean(namedInstance, type);
                         } else if (quartzBeanFactory.containsBean(parameter.getName())) {
-                            obj = quartzBeanFactory.getBean(parameter.getName(), type);
+                            return quartzBeanFactory.getBean(parameter.getName(), type);
                         } else {
-                            obj = quartzBeanFactory.getBean(type);
+                            return quartzBeanFactory.getBean(type);
                         }
-                    }
-                }
-                parameterInstances[i] = obj;
+                    });
             }
         }
         val clazz = method.getDeclaringClass();
@@ -134,27 +142,27 @@ public class BeanInjector {
             Object instance;
             val type = field.getType();
             val value = field.getAnnotation(Property.class);
-            if (value != null) {
+            if (isInjectionPoint(type)) {
+                instance = createInjectionPoint(field);
+            } else if (value != null) {
                 instance = resolveProperty(quartzBeanFactory, field.getGenericType(), value);
             } else {
-                val beanProviderInstance = resolveBeanProviderDependency(quartzBeanFactory, field.getGenericType());
-                if (beanProviderInstance != null) {
-                    instance = beanProviderInstance;
-                } else {
+                instance = InjectionPointHelper.withInjectionPoint(field, requiredFrom(field), () -> {
+                    val beanProviderInstance = resolveBeanProviderDependency(quartzBeanFactory, field.getGenericType());
+                    if (beanProviderInstance != null) return beanProviderInstance;
+
                     val collectionInstance = resolveCollectionDependency(quartzBeanFactory, type, field.getGenericType());
-                    if (collectionInstance != null) {
-                        instance = collectionInstance;
+                    if (collectionInstance != null) return collectionInstance;
+
+                    val namedInstance = BeanUtil.getNamedInstance(field);
+                    if (namedInstance != null && !namedInstance.isEmpty() && quartzBeanFactory.containsBean(namedInstance)) {
+                        return quartzBeanFactory.getBean(namedInstance, type);
+                    } else if (quartzBeanFactory.containsBean(field.getName())) {
+                        return quartzBeanFactory.getBean(field.getName(), type);
                     } else {
-                        val namedInstance = BeanUtil.getNamedInstance(field);
-                        if (namedInstance != null && !namedInstance.isEmpty() && quartzBeanFactory.containsBean(namedInstance)) {
-                            instance = quartzBeanFactory.getBean(namedInstance, type);
-                        } else if (quartzBeanFactory.containsBean(field.getName())) {
-                            instance = quartzBeanFactory.getBean(field.getName(), type);
-                        } else {
-                            instance = quartzBeanFactory.getBean(type);
-                        }
+                        return quartzBeanFactory.getBean(type);
                     }
-                }
+                });
             }
             val realTarget = BeanInjector.unwrapIfProxy(bean);
             field.set(realTarget, instance);
@@ -224,5 +232,47 @@ public class BeanInjector {
             return new PropertySupplier<>(postProcessor, annotation.source(), annotation.value(), generic);
         }
         return postProcessor.process(annotation.value(), annotation.source(), rawClass);
+    }
+
+    private boolean isInjectionPoint(Class<?> candidate) {
+        return InjectionPoint.class.isAssignableFrom(candidate);
+    }
+
+    private InjectionPoint createInjectionPoint(MethodParameter methodParameter) {
+        var current = InjectionPointContext.get();
+        if (current != null) return current;
+        boolean required = resolveRequired(methodParameter);
+        return new DependencyDescriptor(methodParameter, required);
+    }
+
+    private InjectionPoint createInjectionPoint(Field field) {
+        var current = InjectionPointContext.get();
+        if (current != null) return current;
+        boolean required = resolveRequired(field);
+        return new DependencyDescriptor(field, required);
+    }
+
+    private boolean requiredFrom(MethodParameter mp) {
+        return resolveRequired(mp);
+    }
+
+    private boolean requiredFrom(Field f) {
+        return resolveRequired(f);
+    }
+
+    private boolean resolveRequired(MethodParameter mp) {
+        var inj = mp.getParameterAnnotation(Inject.class);
+        if (inj != null) return inj.required();
+        var aut = mp.getParameterAnnotation(Autowired.class);
+        if (aut != null) return aut.required();
+        return true;
+    }
+
+    private boolean resolveRequired(Field f) {
+        var inj = f.getAnnotation(Inject.class);
+        if (inj != null) return inj.required();
+        var aut = f.getAnnotation(Autowired.class);
+        if (aut != null) return aut.required();
+        return true;
     }
 }

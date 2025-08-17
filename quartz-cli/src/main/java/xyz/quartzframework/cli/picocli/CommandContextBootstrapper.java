@@ -7,7 +7,7 @@ import picocli.CommandLine;
 import xyz.quartzframework.Inject;
 import xyz.quartzframework.aop.NoProxy;
 import xyz.quartzframework.beans.factory.QuartzBeanFactory;
-import xyz.quartzframework.beans.support.BeanInjector;
+import xyz.quartzframework.beans.injection.BeanInjector;
 import xyz.quartzframework.beans.support.annotation.Preferred;
 import xyz.quartzframework.beans.support.annotation.Provide;
 import xyz.quartzframework.cli.SubCommand;

@@ -18,8 +18,8 @@ import xyz.quartzframework.beans.condition.metadata.*;
 import xyz.quartzframework.beans.definition.metadata.MethodMetadata;
 import xyz.quartzframework.beans.definition.metadata.TypeMetadata;
 import xyz.quartzframework.beans.factory.QuartzBeanFactory;
+import xyz.quartzframework.beans.injection.BeanInjector;
 import xyz.quartzframework.beans.strategy.BeanNameStrategy;
-import xyz.quartzframework.beans.support.BeanInjector;
 import xyz.quartzframework.beans.support.annotation.Provide;
 
 import java.util.*;
